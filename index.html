@@ -227,6 +227,7 @@ select option{background:#1a1410}
     <div class="controls">
       <div class="speed-group">
         <span class="speed-label">速度</span>
+        <button class="speed-btn" data-m="0.25" onclick="setMult(this)">×0.25</button>
         <button class="speed-btn" data-m="0.5" onclick="setMult(this)">×0.5</button>
         <button class="speed-btn active" data-m="1" onclick="setMult(this)">×1</button>
         <button class="speed-btn" data-m="1.5" onclick="setMult(this)">×1.5</button>
@@ -753,30 +754,36 @@ function shareFavorite(id){
 
 // ── Scroll ────────────────────────────────────────────
 function toggleScroll(){scrolling?stopScroll():startScroll()}
+let _scrollAccum=0;
 function startScroll(){
-  scrolling=true;lastTs=null;
+  scrolling=true;_scrollAccum=0;
   const btn=document.getElementById('scroll-toggle');
-  if(btn)btn.textContent='⏸ 停止';
+  if(btn)btn.textContent='\u23f8 停止';
   if(animId){clearInterval(animId);}
   animId=setInterval(()=>{
     if(!scrolling){stopScroll();return;}
     const el=document.getElementById('lyrics-outer');
     if(!el)return;
-    const step=baseSpeed*speedMult*(1/30);
-    el.scrollTop=el.scrollTop+step;
+    _scrollAccum+=baseSpeed*speedMult*(1/60);
+    if(_scrollAccum>=1){
+      const px=Math.floor(_scrollAccum);
+      el.scrollTop=el.scrollTop+px;
+      _scrollAccum-=px;
+    }
     if(el.scrollTop+el.clientHeight>=el.scrollHeight-2){stopScroll();}
-  },Math.round(1000/30));
+  },Math.round(1000/60));
 }
 function stopScroll(){
-  scrolling=false;
+  scrolling=false;_scrollAccum=0;
   const btn=document.getElementById('scroll-toggle');
-  if(btn)btn.textContent='▶ 自動スクロール';
+  if(btn)btn.textContent='\u25b6 自動スクロール';
   if(animId){clearInterval(animId);animId=null;}
 }
 function tick(){}
 function setMult(btn){
   document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');speedMult=parseFloat(btn.dataset.m);
+  btn.classList.add('active');
+  speedMult=parseFloat(btn.dataset.m);
 }
 </script>
 </body>
