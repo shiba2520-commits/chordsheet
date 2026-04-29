@@ -834,12 +834,15 @@ function buildChordSVG(name) {
   const strings=6, fretCount=4;
   const base=ch.baseFret||1;
   const showNut=base===1;
-  const strLabels=['E','A','D','G','B','e'];
+  // String order: e(1st) at TOP, E(6th) at BOTTOM
+  const strLabels=['e','B','G','D','A','E'];
+  // strRow(i): i=0→E(bottom), i=5→e(top)  =>  row = strings-1-i
+  const strY=i=>pt+(strings-1-i)*sg;
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
   s+=`<rect width="${W}" height="${H}" fill="#1a1208" rx="12"/>`;
-  // String lines (horizontal) + labels
+  // String lines (horizontal) + labels  (strLabels[0]='e' = top row)
   for(let i=0;i<strings;i++){
-    const y=pt+i*sg;
+    const y=pt+i*sg; // i=0→e(top), i=5→E(bottom)
     s+=`<text x="6" y="${y+4}" fill="#c8a96e66" font-size="10" font-family="monospace">${strLabels[i]}</text>`;
     s+=`<line x1="${pl}" y1="${y}" x2="${pl+fretCount*fg}" y2="${y}" stroke="#c8a96e44" stroke-width="1.5"/>`;
   }
@@ -853,16 +856,18 @@ function buildChordSVG(name) {
   if(!showNut){
     s+=`<text x="${pl+fg*0.45}" y="${pt+(strings-1)*sg+16}" fill="#c8a96e" font-size="11" font-family="monospace" text-anchor="middle">${base}fr</text>`;
   }
-  // Barre (vertical bar crossing strings)
+  // Barre: from/to are frets[] indices (0=E,5=e), map to row via strY
   if(ch.barre){
     const bx=pl+(ch.barre.fret-base+0.5)*fg;
-    const by1=pt+(ch.barre.from||0)*sg;
-    const by2=pt+(ch.barre.to!==undefined?ch.barre.to:strings-1)*sg;
+    const fromRow=strY(ch.barre.from||0);
+    const toRow=strY(ch.barre.to!==undefined?ch.barre.to:strings-1);
+    const by1=Math.min(fromRow,toRow);
+    const by2=Math.max(fromRow,toRow);
     s+=`<rect x="${bx-dr}" y="${by1-dr*0.5}" width="${dr*2}" height="${by2-by1+dr}" fill="#c8a96e" rx="${dr}"/>`;
   }
-  // X/O markers (left of nut)
+  // X/O markers
   for(let i=0;i<strings;i++){
-    const y=pt+i*sg, fret=ch.frets[i], mx=pl-13;
+    const y=strY(i), fret=ch.frets[i], mx=pl-13;
     if(fret<0){
       const d=4;
       s+=`<line x1="${mx-d}" y1="${y-d}" x2="${mx+d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
@@ -875,7 +880,7 @@ function buildChordSVG(name) {
   for(let i=0;i<strings;i++){
     const fret=ch.frets[i];
     if(fret>0){
-      const x=pl+(fret-base+0.5)*fg, y=pt+i*sg;
+      const x=pl+(fret-base+0.5)*fg, y=strY(i);
       const barre=ch.barre;
       const cov=barre&&barre.fret===fret&&i>=(barre.from||0)&&i<=(barre.to!==undefined?barre.to:strings-1);
       if(!cov) s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
