@@ -829,53 +829,56 @@ const CHORD_DB = {
 function buildChordSVG(name) {
   const ch = CHORD_DB[name];
   if (!ch) return null;
-  const W=160, H=175, pl=20, pt=40, sg=20, fg=28, dr=9;
+  // Horizontal layout: nut on LEFT, strings run left→right, E(low) at top, e(high) at bottom
+  const W=218, H=168, pl=42, pt=16, sg=26, fg=42, dr=9;
   const strings=6, fretCount=4;
-  const base = ch.baseFret||1;
-  const showNut = base===1;
-  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<rect width="${W}" height="${H}" fill="#1a1208" rx="12"/>`;
-  // String lines
+  const base=ch.baseFret||1;
+  const showNut=base===1;
+  const strLabels=['E','A','D','G','B','e'];
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<rect width="${W}" height="${H}" fill="#1a1208" rx="12"/>`;
+  // String lines (horizontal) + labels
   for(let i=0;i<strings;i++){
-    const x=pl+i*sg;
-    s+=`<line x1="${x}" y1="${pt}" x2="${x}" y2="${pt+fretCount*fg}" stroke="#c8a96e44" stroke-width="1.5"/>`;
+    const y=pt+i*sg;
+    s+=`<text x="6" y="${y+4}" fill="#c8a96e66" font-size="10" font-family="monospace">${strLabels[i]}</text>`;
+    s+=`<line x1="${pl}" y1="${y}" x2="${pl+fretCount*fg}" y2="${y}" stroke="#c8a96e44" stroke-width="1.5"/>`;
   }
-  // Fret lines
+  // Fret lines (vertical)
   for(let f=0;f<=fretCount;f++){
-    const y=pt+f*fg;
+    const x=pl+f*fg;
     const isNut=showNut&&f===0;
-    s+=`<line x1="${pl}" y1="${y}" x2="${pl+(strings-1)*sg}" y2="${y}" stroke="${isNut?'#e8e0d0':'#c8a96e33'}" stroke-width="${isNut?4:1.5}"/>`;
+    s+=`<line x1="${x}" y1="${pt}" x2="${x}" y2="${pt+(strings-1)*sg}" stroke="${isNut?'#e8e0d0':'#c8a96e33'}" stroke-width="${isNut?4:1.5}"/>`;
   }
-  // Fret number
+  // Fret number if not at nut
   if(!showNut){
-    s+=`<text x="${pl+(strings-1)*sg+9}" y="${pt+fg*0.65}" fill="#c8a96e" font-size="11" font-family="monospace">${base}fr</text>`;
+    s+=`<text x="${pl+fg*0.45}" y="${pt+(strings-1)*sg+16}" fill="#c8a96e" font-size="11" font-family="monospace" text-anchor="middle">${base}fr</text>`;
   }
-  // Barre
+  // Barre (vertical bar crossing strings)
   if(ch.barre){
-    const by=pt+(ch.barre.fret-base+0.5)*fg;
-    const bx1=pl+(ch.barre.from||0)*sg;
-    const bx2=pl+(ch.barre.to!==undefined?ch.barre.to:strings-1)*sg;
-    s+=`<rect x="${bx1-dr*0.5}" y="${by-dr}" width="${bx2-bx1+dr}" height="${dr*2}" fill="#c8a96e" rx="${dr}"/>`;
+    const bx=pl+(ch.barre.fret-base+0.5)*fg;
+    const by1=pt+(ch.barre.from||0)*sg;
+    const by2=pt+(ch.barre.to!==undefined?ch.barre.to:strings-1)*sg;
+    s+=`<rect x="${bx-dr}" y="${by1-dr*0.5}" width="${dr*2}" height="${by2-by1+dr}" fill="#c8a96e" rx="${dr}"/>`;
   }
-  // Open/Mute markers
+  // X/O markers (left of nut)
   for(let i=0;i<strings;i++){
-    const x=pl+i*sg, fret=ch.frets[i];
+    const y=pt+i*sg, fret=ch.frets[i], mx=pl-13;
     if(fret<0){
-      const d=5;
-      s+=`<line x1="${x-d}" y1="${pt-17-d}" x2="${x+d}" y2="${pt-17+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
-      s+=`<line x1="${x+d}" y1="${pt-17-d}" x2="${x-d}" y2="${pt-17+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+      const d=4;
+      s+=`<line x1="${mx-d}" y1="${y-d}" x2="${mx+d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+      s+=`<line x1="${mx+d}" y1="${y-d}" x2="${mx-d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
     } else if(fret===0){
-      s+=`<circle cx="${x}" cy="${pt-17}" r="5" fill="none" stroke="#c8a96e88" stroke-width="1.5"/>`;
+      s+=`<circle cx="${mx}" cy="${y}" r="5" fill="none" stroke="#c8a96e88" stroke-width="1.5"/>`;
     }
   }
   // Finger dots
   for(let i=0;i<strings;i++){
     const fret=ch.frets[i];
     if(fret>0){
-      const x=pl+i*sg, y=pt+(fret-base+0.5)*fg;
+      const x=pl+(fret-base+0.5)*fg, y=pt+i*sg;
       const barre=ch.barre;
-      const covByBarre=barre&&barre.fret===fret&&i>=(barre.from||0)&&i<=(barre.to!==undefined?barre.to:strings-1);
-      if(!covByBarre) s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
+      const cov=barre&&barre.fret===fret&&i>=(barre.from||0)&&i<=(barre.to!==undefined?barre.to:strings-1);
+      if(!cov) s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
     }
   }
   s+='</svg>';
