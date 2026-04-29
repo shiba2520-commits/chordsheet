@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
   <head>
     <meta charset="UTF-8">
@@ -9,7 +8,7 @@
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{--gold:#c8a96e;--gold-dim:#c8a96e55;--gold-faint:#c8a96e18;--bg:#0f0c08;--text:#e8e0d0;--text-dim:#e8e0d055;--text-mid:#e8e0d088;--red:#e88060;--purple:#c4a0e8}
-    html,body{height:100%;background:var(--bg);background-image:radial-gradient(ellipse at 20% 20%,#1f1508 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,#120d04 0%,transparent 60%);color:var(--text);font-family:'Noto Sans JP',sans-serif;overflow:hidden}
+    html,body{height:100%;background:var(--bg);background-image:radial-gradient(ellipse at 20% 20%,#1f1508 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,#120d04 0%,transparent 60%);color:var(--text);font-family:'Noto Sans JP',sans-serif;overflow:hidden;position:fixed;width:100%}
     #app{display:flex;flex-direction:column;height:100vh}
     .header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--gold-faint);flex-shrink:0}
     .logo{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
@@ -53,7 +52,6 @@
     .loading-sub{color:var(--text-dim);font-size:12px;margin-top:7px}
     .msg{font-size:12px;margin-top:10px;text-align:center;line-height:1.5;min-height:18px}
     .error{color:var(--red)}
-    /* ── Display screen ── */
     #screen-display{padding:0;align-items:stretch;justify-content:flex-start}
     .song-header{padding:14px 24px 10px;border-bottom:1px solid #c8a96e12;flex-shrink:0}
     .song-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
@@ -74,18 +72,17 @@
     .action-btn.fav-saved{border-color:#c8a96e;color:var(--gold);background:#c8a96e11}
     .action-btn.reroll-btn:hover{background:#ffffff08}
     #chord-sources{display:none;padding:8px 24px;background:#ffffff03;border-bottom:1px solid #c8a96e08;flex-shrink:0;font-size:11px}
-    .lyrics-outer{flex:1;overflow-y:auto}
+    .lyrics-outer{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .lyrics-inner{padding:20px 24px;max-width:700px;margin:0 auto}
     .section-label{font-family:'Playfair Display',serif;font-style:italic;color:var(--gold);font-size:13px;letter-spacing:.15em;text-transform:uppercase;margin:20px 0 8px;opacity:.8}
     .line-block{margin-bottom:11px}
     .chord-line{font-family:'Space Mono',monospace;color:var(--gold);font-size:13px;letter-spacing:.08em;min-height:18px;white-space:pre}
     .lyric-line{font-size:16px;line-height:1.6;letter-spacing:.04em}
     .lyrics-end{height:80px}
-    /* ── Favorites screen ── */
     #screen-favorites{padding:0;align-items:stretch;justify-content:flex-start}
     .fav-header{padding:16px 24px;border-bottom:1px solid var(--gold-faint);flex-shrink:0;display:flex;align-items:center;gap:12px}
     .fav-title-text{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex:1}
-    .fav-list{flex:1;overflow-y:auto;padding:12px}
+    .fav-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
     .fav-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-dim);gap:10px;font-size:14px}
     .fav-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid #c8a96e18;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .2s;background:#ffffff04}
     .fav-item:hover{background:#c8a96e0a;border-color:#c8a96e33}
@@ -96,325 +93,115 @@
     .fav-delete{background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;transition:all .2s;flex-shrink:0}
     .fav-delete:hover{color:var(--red);background:#e8806011}
     .fav-share{background:none;border:1px solid #c8a96e33;color:var(--gold);font-family:'Space Mono',monospace;font-size:10px;padding:4px 8px;border-radius:12px;cursor:pointer;transition:all .2s;flex-shrink:0;white-space:nowrap}
-    .fav-share:hover{background:#c8a96e11}
-    /* ── Shared view banner ── */
-    .shared-banner{background:#4a2e6e33;border-bottom:1px solid #9b6fd433;padding:8px 24px;flex-shrink:0;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--purple);font-family:'Space Mono',monospace}
-    /* ── Toast ── */
-    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1410;border:1px solid #c8a96e44;color:var(--text);font-family:'Space Mono',monospace;font-size:12pxading:1020pxorderadius:px;ociy0;tratiol.sptvns:n;ndex:9;hit-senwr
-           toas.{opct1tar:rnsatX(-0%) ranla:1xsoi#961;borrr:8x-b8pcr:ner;tastional.sbkun#ff04rlt-imhokud:8a96e0;ordcolo:c9e4
-                 .esl-ufn-amil:Sae o',oopafotsze:13pcoora-gl);py.:2p;feri0;te-aln:te
-                 rsl-inle1m-idh}
-           .eslttefn-y'lfar ipasrfotze1pftwg70
-           .eu-aitfntsz:3x;olor:va(-tetmdmri-2px}
-    .re-etfntpc Mno'mnscnie10px;oloratx-di;argnto:}.e-rwlrrld-d;fnt-size;lex
-    @eipit
-     dercl.aahrdsoucspedb,.o-bnbckbn#fvatut,#t,shrebanedisplyne!imortano{akond:!mpoancoo0!imprtanovao!imptn}
-    ap{heitoint}
-     .screnisplanone!ota #en-dlaydisalokimpaniht:autmpratefovsile!motnt
-     yicuterfow:ileiprt;hhtutmpot}
-     .son-der{onn!oapddg:0 0 pxmrtant} sote{color#0imptnt-si0xipotn} songart{cl:5mprat}
-     -tg.captg{ackgd#e!porn;or#3!mpratordcolocirat
-                .setin-laelcolr#66!mprtant;sz:p!p .ch-le{o:#96eimpornt;fsie1px!irn} .lyrlie{lo#0!imporfnt-ie:impra .lyissyne!pran}
-    /stle>
-    </hedyiv idp> vcas"ade">  dvclas="onc"ome("san =l-n">♩n<n aslote"CodSht<>v
-      dvls"hd-ts>
-     <t s=n-hst -sm id="cbne="isyno" nciom("←<n
-    uto las"gost-s"invbn" ocli="sFvries(t"pl but>
-      <utncsbtgs tnsikcageAie()"設定</bu>  </> /d
+    .fav-share:hover{background:#ca9e1
+                     .hrebneacd#6e;brde-otm:pxsl 9fd3pg8 2fexshrnk0spllx-iscnr;a0x;tie2clor:a(-plfot-fmi:'pM',monsaceasitonfid;t:4x;:%rssateatYpxcgou1;r1pli#c894lr(e;fn-miSceono,mnsacotie2;dg: 0rus:8pxc0;aioal .pnno;zine99tesacwp}ts.o{opcytsfrmtnsX(50 nst)-bisrolritpx
+                                                                                                                                                                                                                                           -wbicrolbarthbacgrou:vard-dim;-a}
+    .simdisla:fle;li-etega:x;dn1x;ordrx li 86e18;odraiusmi-bxcrsnrinal.;kgruf4}rim:ovrgru86e0bodorca94}rsltnm{naml:'ac no',moscfntsze:3;clova(gold;i:f-sn;-lgnt}
+    .el-i{fle:inh:}reltiteftmya Dipyon-z:pfonei70}reultfose:3co-exmi;mri2x
+    s-et{fotfm: Mnopaceo-sze:0c:axtim)agn-4sroorva-godit-ie18pfl-hrn:0
+         eip{ ad.rs.-r#o-soues.e-bn.olb,baa-na-uto#st,.r-anerislaeora
+    odacondf!por;lr0mrtoverflaoprtnt}
+    p{:tpn scpa:nertt} ce-isply{isllok!impattat!in;ef:sbleimorant}lycotervefwsbport;ighauoipr .aer{ode:ipra;angxirasg-ite!prtnz2!mort} ngcor5!imprta
+     .apg{aond#e!otncor:3!obrclo#ciot}
+     lae{ol6!mprn;ts1!irtt
+         .loc6!pan;otsx!io.rciolr00!mornt-e4pimotat .yis-isla:neir}
+    s<edid> <dics"er> v s"lo lige">pn las=ogn>♩snsp sleh<pa>d <icls=hbs"
+      tncls="-hm" =a-ne=yon"nli"oHme)"←る</btn
+     <bt as=bnosbsdavbt"shwavrte) le"isly:n気に入<uto> <tna="stn-mnlccaneiKy()> <bo>  iv
+    div
+     <-KE - ils"en sreae v ylx-lige;mg-oto6p> aheojに<  <ansn sl="e:lampp,,p)"P</pa> > vs"gp"
+     =sorlai
+     <ipuype"po"=p-ky-nut plce=Pーけ opl=fsplckfal"yleadgrh:p>    n lk=tKVi de"yl=oiobslert1xo:%to:trnlY(5aconoernon;csritercl:r(ol;-szeppag4aiy.">�<bu /dv  ps=k-hto Gem Iーが必で（）rhr"hts/i.gl.cm/i"aret"laiool/ia 発きす  di soe-">  ec "oellt><optinal="ein-.fahi>gn-.last（ォo/slet  bt cls"-got"i"fch-t"oclck"code)lepdn:9fosize12x↻モデ一覧<to
+        onlstnpriay oclicksei("て始→/bt> pas"dpie-g>/ i>
+                               <v!H->
+     d s"crenicen-e"
+     <d tyl"exagcetema-btm:0p sp =eo-jp"コsan
+      panas="oetal.p
+      </>
+    plshsuを入るだ歌タードし>
+     <v "ir>  pty="eterhintlaehold例:チンー"oyofkenroeh()>
+     bt="bn-mr hbt"c=or("索するb </iv ls=msgerr i"h-> </>!->
+                        d s="ce =rn" <ivls"ca  < cascdaこ> v las=f < ason i"onir->dv  dvclscormaiicnt">/ddv scofim-et<san d"fi-ear<panspd"n-ne<spna asb-dgid"cofrm-b</pn>/i
+                          <i
+                          dicsbtn-
+                           <uto cls"bnghtnckgoHe)を探すbon   tls"npria"olk"fr()>こでK bt
+                         dv> <dv> < lmgro"d=cfrmr/
+     iv> - RCHR-><ivcs="scr"i"scenesl se=padi0ln-es:srcjsfntnt:fe-a>
+     <isle=pdg:6x4xd-oto:xoidv(-odfaif-srndply:le;aliemscne;ga:12px>
+        < y=lx"  <ivst"o-ylripaysrfnt-szp;otet0索結d> < sy=fsi:2pcl:-xtdm)margt""esl-ey<di  <v
+      <ut cbtbtnsm olc"oHm()>← 戻る<utn> /i  <d stl=ex1;rl-utwbit-losol:tuc;pd us><dv><dv
+    !OIN ->
+     dils"rei="reloding <="nr"d <las"langtx" "lai-e索.p
+      pls=inu doang-u<>/>
+    DSA ->
+    <vcls"re" i="e-isla>  dvdshareneclaaean tye"isla
+      保存みー譜示 <aidhr-fo"p>  <di> <i clasngher>  dvl="ng-titl" "dile><iv
+      <ivl="ogrti" d"sai"
+      clssogag>di ls=pt"pm">/v    asc-t i="pp"v </v>  dv <ica=cnos
+      <dcas=e-o"   spnlslal"度s   bla"pe-t d"5"nik"sMlth)".o>
+       oncs=pebtatv" dam="onlik=tl(ti"1buo
+       <bton ase-"dam.5 onck=l(ts)>1.<ut>   uto s="btm2 ocic"Multis">×2/tn> <tnca"pd-bndm3 c"etMt(s>3/tn
+                                                                                                   />   <utonls"rl-b" "sogle"ni=togeSrl)動ロルut> < ivcls"co-brion>  but as"cton-nr-btn"d=erlt"nlikoRlty=dsan">🎲 ーをき直</to> <ns"iobid"fbock="ogeFare(☆ <ut
+     <tonasai-n =cybtncic=coyAsT()"�テスコ<bto btncs="cnb"dptt" cick"in)>�️ 刷PD保存o> v>  ic-our"/d>dvlas"rics-ot" ="cor"
+      <dilas="lyicsnr" i"ci"<d> / /dv> <! RTS- iv lscrn"=sre-or <v=vhd>
+       csfitltt>★おりdv   <to as"thttnmo=Hm" 戻る/bt> </ divcas=f-li"t<> i>i>
+    i="ts></dv>
+    cptfui s(kd)ryrunloaltoaggeIek)||'at{ernd'}ucnsek,)t{ocloe.t(vcch{untolsGtSNk,){rytun O.ps(ocSor.gtm()}ch{etur}unetk,tr{lolStreN.rnfy)}at{
 
-     <- APIE -
-     i cas"e i="-e
-      dsyexn:cetrmagn-to:6  <sncs=eojpじめにsn
-      a clheroe"ty"nt-siclam(2p5,0px"キspn
-      <d> dilas"igru"  <disy"ineaive"
-       inuyp=swri="k-n"aehd=APIーりけ" atol="offselck"se stle=pinrig8>   <to ck=ogleVib" =en tyl"osiobout;right:1pxtp5%;rso:rsatY-;ackgrobrrecrsorpnte:a(gl)nepad:p;pi0"👁buo
-    <dv
-      cs=kyn"ogeGiAーがで料）<brae"t:/aui.gog./pe" aget=bk> u.goglo/pk<a> で行す<>
-     <da=oelo"    elecidmde-eect"<ptiva=gemi-.-fli"geii.5as-ieデフル）onec  <buto lsghosetch-bnonlc"ecoel)"e="din: 1p;t-se12x">デル一<but>  <dv>
-       <n s="nprmar cc=epiKy()存し始め <bto
-      <cla"mg d=ai-m/
-     /dv>
-     <d
-     <!-SERH->
-     dv clas="cre" ="enar>  ivye"et-algn:ctrgbtmp"
-       sncs="o-jp>ー譜を/sa  <an ls="ro">nsanl.s>
-     </iv cas="esu名入力歌詞コードす<p
-      d ls=iup">  pt yp="eti="sc-t"lcoldr"を入: チェックンース）nkown(evt.=te'doSa()   <t clas"bnmr idsear-bnnclc=dc()>索す</uto
-     /i> <p cs"gero"id=earchr<p
-    <> <-FM -<ds"ce" i="cencm> <vcs=cad
-     la"cabのでっていま？/
-       vla=cof-b>
-        s="ofrtt idcnimil"><iv>
-      <icls"ofiaii"cnir-t"></>
-       <v=fimme"<sp d="cim-ya><an id="conirgne"pan<pan s"bmbde" i"onirbpm><pa><v>  />  <i ls"tnro
-       btns=bthos"onlk"gHe)"うを探</tn>  <btocas="n-ria"lidoni("このでO</bt
-       dv iv>  ls=msgr d"imrr> />
-     SAH EU -
-     dvlas=srn =srnults"s=padin;aiiem:sth;tfycotnlexart> sl="adn:p 2px;bbto1 slid ar-odfai;f-sndiplayexignes:cetg:p">
-     <isy"fex:1
-      <i yleonfmly:irDpa,eonsie1pnwit"結<dv>
-       i leote2xolrvar(-exim;ag-o: i=rsutqey>>  <d>  <butnca"bstbt-ic=goe(t>
-                                                                           /d> i=fl:1oefw-:au;ad1x d="ul-is"</v>
-     i
-     <!-ODI - <dv ls="cre" =scelodg d la=sie"></iv  pls="lai-ext =ln-text>ー索.<p>   las"lainsui"oain-"<p
-     /dv
-     !- DIPY-
-     ivcscreid"ren-dsp"
-      dvd"sae-ne lasrdberle="dplanon">
-      �存コード譜を示 <s dsaed-">/> </i>  i las=soghadr>
-     dicass="ng-il d="iti"<dv  <ivas=sgti=dspatt"<dv  <di ls"ota">  <i a=-ag ipm"><div   is=pt"id"isap">iv   /v
-      <di
-     <i lsotos"
-      < ls="sd-ro"
-       panca=sed-e">速/pan   btncs=spedata-m5"lisMths>0</to>  bucs-bactv" dtam"lk"etM(tis"t>    but ls=pe-btdaa15 clieu(th)1.5<bto>   <btn ls=se-ndtm" olic=setl"<but>   <btnlasspedb"dm=""occ=seMl(t)"×to>
-      <v>
-       boncas=sol-bt d"rltge oicktolcl()"▶ 動ロル/uo> i
-     <ivclasaor"=atna">  bu s="cin-t rolbn" ="rol-bt ock=Rel styledsp:nn"コドきbuto>
-      <ttnls="cinb"i="av-btn lik=ogeavieお気入に追加uton
-      <uto cs=tinn" ="cy-noclc"oyTt)� テキスピuo>
-      <bonca=ctinbt" d"pt-oclc"ihor"🖨印/P存buto  /v
-       =hod-oucs>iv div as"ycoter =lcsue"
-     vs="yic-nr"="cne">d> <d /dv !FVRITE >
-     i lasscen ="c-fvr"  <ic"avede  dicls"-tt-tx★気にり<v
-      <ton ls"tngosbm" oclgme る/butn> /i
-      <ivs=avlitd"falt>di
-     /dv><div>div i"</div>
-    scp>/ ─Soag ──────────────────────────ntinlekd)trrn ocaoag.geI||'}ccrr |'
-    nct ltk){{loaSoaseIe(kv)}ct}ntio sON,)y{ur SN.paocag.etItk)|}tc{rtrnd}onsetJ,)trcSog.tIemkJS.tigfyv)ca}
-    /─ at ─────────────────tiKeyGe'cke'
-    ltoesGt'c_me,gmi-25-h-i'etsnIo=ul;etetodData=ul
-    le ueoucsnu;tiVieiorit=fse;
-    tsclin=beed0=1,I=ulTs=ul
-    /─Hrce og was ut──────
-    costHAOEDO {"gfo{ti":ッの"tit":bkb", "bm:8yr"01, ge"P "corDa: "cp" 1"is {lae""ント" ies:[{co M7 G  B E", ri:}}{label:メロ"le":[cs" 7 "l:"のをろなが"}or" DB Em"lyic:"とく付いた"}{cr" " ""r" "あ麗に光てって"hrds D 7 Em,"lrc""分えなだよな", {hds"C D",rc":"この街色どり"hd":  B7m" "ri""光をれて日向う{cos:C7 ,"rc あので僕も{"hd""G7 "lyrc" いたかな]},el:"ビ le"{"cds ""r:こら}"d:"7 ,"lyr" チェのンス", hod:B  m",lrc: どけるに"}, "hod":"C7 ",lyr":"あいすのな"},or" G 7", rc 嫌 だな}{"rs " lyc" "そ,hrd:"M ,"lrc" いつたな夫と"}, {o":"B m" "cえよ" co:"C ,ri:"{"rd: "G " "lyrc" いいをらせ},ae" Aメ2",lns"{"hrd:"7 G",li" 君んのが" od:"D  m,"" "んも美した"}{rd:C7"lyr""つの正っ",{"hds:  7E, "yrc: 別も方のだう} {"hods M7 D B B7 m"lc: "{chor":C   " y" }"ch "" lic かたの"},{or: " Bm,icて思出せるゃないど},{"hos:  D, ri""事しいたよ},{chd:G G7 yic "事にて}]{"b: "サビ ": {cds: ""yrこれか}"ord":"7 D lyr: チックピスを}{ors m ""yrc"どで見つる度"}{"rd "7D "lri"あ君を出のな,"o" ", "lr "だ },{"chors""rc""そでも",{rd": D,lric "つた会た"} {hr""B  E,l":う大言えよに"hor: M D","yri": "} {hds G, lyrc""よ似誰見けら"], ウロ, le":[co""C D B"lc: {hr" "7 D G7, lyic:" "hrd" 7  D Em "rc":"}]}};
-    utnHadodeite,ati{
-       ns t=tlrm.la(\s)
-       s a=(s|').rim(tas(.rpac(\+/g');
-      renCE_NSfds{ onst.onIfotlti().plac/\/'; cn a.nno.ris.ti(.ooeas(rae\/,')
-                    etn t= & a=a; }|nl;/─ ───────────────ce.tlmetyI(oelset.alud(fncn i)
-       ifay{  cmtgEmntyId('-ynu)au=ai soSe(sah(
-         /─cr────────────────
-         untnsoSce(n{ cetquelcAl're'.forEch>slsis.rmov(acte)
-         osr=dce.ElemByI(cen-)
-                                            (sc)c.csLtad'te'); cont Dsa==y' ntrhn=='eac;
-             co iReult==rest'
-             ostaBndocentgtEemtBy'c-) cnaNavnomntgeEmty(an-;(tn bn.t.dspassl?':'o i(faNavn)fvNavBtntl.dsla=sS'e
-           }utongom
-       stopSrol(iVwnFvoie=a
-                 wSren(seah;
-                        docmetmty(seceror'.exonn'
-                       }nton Ke)
-    toc( ocmen.etlmetyI'aii.e=y;on.etEemtI'apey)xCoe
-     omneEeI(meslec)val=me how'ae);ntn tgleKyVi(
-       st =etemyId(p-kyipu'); cnsbnumetgtlnB(ye-bt (ntpe='aswoi.tyet'bt.sleci}
-                    leinp=swosyeact=.7';
-                   fonsoMgt,)cot=ocmen.glmentae-mgoten=.telo=cfucionwTs(
-         cnst t=uenteny'tos')t.etotet=gt.asLta'o;
-    iut()=.sLis.ro(shw'5
-     Iey──────────────
-    onaeAKey(){ o =dmengetlnyd(ai-eyipt'luim;if!vhosgAを入さ,vrr);eurn
-                pivlset's_yae) cnumn.ByIdmelslet'
-                modlslu||ii5-lhli;set'c_m',md) hoMg(✓ また'var(-'
-                eieo)=>swcrn('sh,70;scfuctoechMdls) cns kdoce.gElmtBI('ap-ky-inp)ae.rm(|ap;(e)soM(AIキー入ださ,va-ed)reur stt=cunt.tenByIdfthn'
-                tndaletebn.exCn'読';ty{co rawtet(htps/eertieanuaegscoe/moeky=+ky+'pa0'
-                                        cont tjs() d.eor)th wEro(d.rroesae)
-                                        costst(d.o[].ie(m=mpeGenrtioMos|)inuseennt)&elusgein)  ma=(.aeepae(ol/'lbem.samem.nmrea(moel,')})  .(a,>.d.caeComaa.
-                 nsel=cu.tEmBd(moes);nML'; st(m={cnso=doct.reteEm'opn);lui;.tetCnt=midfm.=m)eetetr;s.pdl(o}
-      (valu&stlet)slvale=0.d;  swMg('✓'+ltegt'取得し(god)
-    }ahhoM'取失敗'esear-d
-     fia{tisae=fs;bxtCe='↻モデ一覧'}
-    /  miI──────────
-    asyc nci alm(g,sueer=flsate={ coto= syste_sruin:{[es}, cnen:.mp(>{ro:oe='sstnt?me:'usr't:cntn})  gneatonCfaus1tpare:3
+      ltpKlse(_);tmel=sG(smo',geini-25lh-i'
+      ltInu,renChat=leScsnlsiwivtefa
+      tcllssee=,eMl1,aiI=u,s;
 
-                                                      i(userchoy.os{olach{}
-                                                                     osrai ech(ts/eaelngae.gogapsmvbe/els/'oe'rot?ke=e,{ mt:'OST',ar'ntye:apiatnjon},dJON.tnibod }cs =wat rxt);
-                                  l d;t{dSprswcattrw Eroース失: w.lie,8)}
-                                         rd..msae|'
-                                         sityle=.sus=9|rstas=|rMgnds'him|ersginuesovoa|rsgicleseurc etd)
-                                         itra&ept2)
-                                         conswa=50at1me.geltBId'laing-stetConen'混雑たイ中.('+temt'/2); atne romseieou(rs,i)
-                                          n alGeims,att+1  f(k|e)trner(er|'HT '.tas);
-                                         tpadce?.]oten?.prt|[;
-                                        on txt.fiterp=.expuhp>t)on');
-                                         c etdcdidte?]udiMtta|{;ost umeinCh[
-                                                                onources=chunks.mapc=>c.wb).iter(Boa.m(=({tw.e||,i:i})caQeresmaeSecheie|[]; rurtuces,sarcre};
-                                        ctnJ({ i()rtnlltceae(``n`).ri)
-                                         ty{etnJN.a(tc{} ot=.ieO{)adO'};is!-tryun JONaeslcs,e+1)}h
-                                         etuu;fnti pmd)etnMrnd(b/12))
-                                        uncoc(c/&m)plae(</g'&t;.rlae/,gt;/────────────s fcderh
-                                        cnsqdcmeteElenty('arh'verm((!)u;cb=egEeyI'at; bt.isb=tue;xCoe='検索.
-                                         doun.Eme('rhrr'.txtConn=';
-                                         { cns esltclGein  ro:',ctn'曲+'情JNの:\tl"名"r:"ーテ",bm"12,"ea0"gne":"ンル"'}],  'pyONY aaJSN bject, kdwn,noea'   cnsfo=ON(etx
-                                                                                                                                                              if(nf|!f.t Eror解析失敗 'e.txt0,);
-                                                                                                                                                               sngfinf;bsedbpmnom|12; dounttlenBd(irit).exotenti
-                                           omngeEemtBd(oir-rtst)tetoneninort' doumtgeElByd'nirm.ttonifoye?iyar'':'; dunletdci-gn')txoen=io.gene|; ocutetenyIfm-p).tCen=o.' '+f.pm B→+bpip)+s; cumeEemny('nr-r')xn=';
-                                         swrem)tc(
-                                             onm=msa'  f(rCse)nle'|moLweae()nudesinid'hnge} esumenttElet(ser-ro')xCoen'ー: ;y{nsedanteCtet=検索す'}
-                                 / / l──────────asnfnodCfi( ocmet.emnI('conirmertCn'; o.tEenBigtex'ttonetー索中...' ocn.geEemnBd'adin)xontogIo.i '+ongfrtstSreodn'
-                                                            / ─hck roed rt ─
-                                                            cns h=fdardoeogftl gIn.t;
-                                  f(hc
-                                     sono={sgI.Info};
-                                  cuetCorDaccoat;
-                                  urSrssursur's:/fre.j,it:FT固定デー'scr}sigavoitefas
-     edrpychta crntce); oSren(');  shoTot(�保存みコ譜表た';
-                                           retu;
-                                            {
-         otprpt'sngfotle('sIo+のコド索取得てだい
-         +UFTulmaegtaコーmGitrードト参、'   +'のOみで返てくさいーダウ要）:\
-             +'{"ap":0"ction":labe"クシ"ines:[cors":EmGD","i":詞の"}]n'  ao: レッ番号ポな0n'
-         +'全セョめる\
-        '-Sでる'; on l=aicalGmi(   {rle'usontopt}  Y a gta chr chttt. Searc e act h a  th sog. Ry N t mpteJSN.Noaolatn.',
-      t  t tapSO(ru.txt)
-     !dta|!daon|da.eis.lgt=0 umleeB'onfmeor'txtnt= コ取きませでらくって再試。'
-      sceen('onfr';rtun;
-            }
-              retra=a urenures;  iiinForeale;redeia(a,es; swc's;
-                                                    }catc()
-                                                      cntgetlenI'nfmrtexCntnt 'e.ma; hSe'onm)
-            }}cfntinl){ f!snfo)ern
-                        sS; ocmt.tElmt('ladngtet'.teCn'�コードを引き中. dcn.gtEeB(loig'.exConensngfotile+' /'ngnoatt
-                        swScen(loing);
-                        ry{
-                            cn om='「onftl+'」'git+ギコドコードト参照し取得くだ   'ほ異なーや解ドをしてださい'
-                            +SONで返くい（マウ不要:'  +{"cp"0,setios"ab""セクン名,"ln":[hr:  ",yri:"行}}\
-                         +- ap カ番号カポな）\'
-                         シ歌めこと'
-                          +' SOを最で完に出すると  cstla calmni [{lur,otnropt},  Yuar agutacr cht sin Sh twefo gtdatfr DIFER u tae RlyO itcprJON.maron,
-                                                           r  )
-                                                         csda=pS(stx);  (!d|!a.ctonat.se.ngth==)
-                                                          oast(得。も一てくい。;
-                                                                 sScedisay');etrn  }
-                        cureCda=aa  urntou=rs; iewgFari=fe nilya)
-                         shocre'y')  hoa('�コドき直した atc(
-                             soTat(ラーemea;  hSen'p;
+      sHRONGSngIfo:ttl"チワンース,ais:acnu,p"1,yr21"gnr":"-P}chrdDa:{a",cis"{ael:イトロ"ne":{"hos" G D B7 E""ric:"}}"al"ロ"lies[{"ord:M7",yc"夜の見ら""cd B Em""y"なと気いた,{"hr"M7G"lc:なに綺てたっ}{"hod"D 7Em"i:"分見えんだ,{c"C,"li":"の街色りどり"},crs":B7 ",lyic光とをれてか""hods:M7D,yr"の中僕}"or""GG,yr"光たな{b:""lie:{"chods""lri":こか"cd":C7 "ic:ス"hdm",ic"こかでけ度,ds:"MD"iすか}{hrd "lc:嫌だ 嫌ch"yicれで"}{"hos:"7 D,i":"いつかた出ら僕ならう大夫と",{rds""mB Em"ri:う}{"hors"C7 ,lr"",{cr""G ,"lr"君ない明を光らせう{"lbe:"Aメ","lshs:"M "lr""君頼さ"}chr": E"yc"もた"}{"hod:"M7G"r":つ方正しかた"{cr"  m":別仕方のだろds"CM Bm B "lr""{cr"7D  ,yc",cr":C  君もたの""hd:m  m,ic"全思出せけなけ}{"hdsC7 ,y":大していんだosG G7,"yric大事てよ}]},"lbe:サビ""[crs""lic"こら,cdsM7D"ycェクのンピーを""os:" 7 "li:見つる度},"hords:""lycあ思すな}r":",lycだ な,crs""ri"そ"hs:C7D,"yc:つた出"{rds:Bm7 E",yi":も丈夫言るよう"}"chordM D"l:"}o: 7"r"君よ誰見}"":ウine:["cr"7 mE"lri":"chd:"7   ""lyi"{corsG D  ",yc:"}}]}]
 
-                                   ─er────────────────
-                                   untin rDipa,i=fase{
-                                     i
-                            ocgetEemntBd(stie'tCotensIn.tile
-                            domt.tEetB(dsis')texoen=sngn.st
-                           dtEnBysbmtConoInf.bm?♩ sonI.+P'
-                            oapocuglend('dsp-') if(p){ fdt.ca&acao>{cltCot'�aa;aplsyedslyinneock;}
-                                                        eEly=no' 
-                                                       / tio b
-                                                       cntelBt=dcum.enty'ro-bt (eroon.leispySaed?'ne' upaaBn
+    ctonideit,rst
+     cottilt().rlae(\s+)csaai|')tm(.LwrCeplce\sg'
+     rer N.fid(> cos=sogfttria(s/g'oss.nInrtst(.oe()ela\s+g,'; eurnst=&sa=a; )|nl
 
-                                                      / Sharedbaner
-                                                       n sareBan=dcumttElenyI'sarer);
-                                                       ardanshadnr.stye.iay=sSe;
-                                                      /ue cotrcvocument.tEemtByd(chd-surc';
-                                                      !&reut
-                                                        srst.rs|;cnssrchQeri=trhQurie|; fourlength)
-                                                        onpmarysoucs0]
-                                                        c srtarui&imy.urincud('   csthonm(){ty{rt nw RLrryuihta.a'w.')crnmryri'不'} ont bfrt?UFT'a.ie?imalsit/[-/].rice,2tnme)
-                                                       e ht'i sy"dpl:laln-temrgappfl-wrapwrp"
-                                                        ml+='<spne=olr:vr(txt-im">ド出:</pa;   =< hr="pii are"_nk sye="isla:ine-lalgntem:etxacrod:ie#9':'#fff0')+bdepx slid+(iUf#c955'#ff2)';lor:isretvr(old':vr-text)+'o-fiy:pae no,onspe;fntsi1x;pdi:4px2pbor-rdi:2;ttecone;on-egt:70+(isfrt :')+itL+' sptle=pa5</pn></a>;
-                                                        ifsnth>1 hl'a y="co:--di"<s  tl+=oue.ic,3.ms={cs h=()={n ew L(r).he.lae('w'cn .uri});reur' hrf=.ui+'"ag"n sleco-x-);ntsz:11;t-oi:ue>'ha';}.joi(',';
-                                                           t=/d'  rv.eMLmrivsty.dp=';
-                                                     }lrQues.lth>{  ont seahs[0;
-                                                                   i.iT=divy="dspl:fx;lgnietega8pxflxwp:wrap"<pan tye=ar-xdim⚠参照元—</aa hf"tp/w.gogleomch?'+ncoURompnenq)" at"_l" ylor:va(go;ntsiz:1t-ecat:ne'+/aa refhps/uretperpkeyrd='neCpontsnnfotle+sogIfri'"tat"_bln slecolr:vr(-gol);ft-i:0prxid r-go-d);ddnpx8pxorr-dis:1text-deoraoneREで確認 </a<d sDi.stlisla='
-                                                                 }e  scD.ne'<syclorva-tt-in-si:1>⚠照<are"tp/ureac.p?kywo'encdURComonsongnfie+'+ngIoi)+'tat=bl syl"corva(-lR認/n>
-                                                                                                                                                                         srivtye.dspay='; }
-                                                                                                                                                                       }sef(sSd)
-                                                                                                                                                                         srv.nrHT'anlo:ar(-txtdi;nti1px"� みコー譜</a';  vtyldip='' 
 
-                            / Lrics
-                            ont ndumnttEntrcsnr'
-                           r.ne=;
-                            (daap&dta.o>0){
-                                cs bnecme.crateme'v;
-                                bn.styl.csTexbkgrund:#42e63;orr:x o#fd55orr-plfnfaacMo,mspaf-sie:1x;pn16bdrs:pgiot1;
-                               banxonap'atacaフ;   n.apedChne
-                               data.ectns.fEh(ec
-                               cst bdme.ee('dv')baNa'ecabe';blxtCnntabelnerapedldbl (sens|])foEah(ne>{   cost=dcmntcremd.csNa'lbk;
-                                                                                                       nHTM'div as"hrd+e(chd|</iv>ivlaslyin>+e(.yr||')+<iv'
-                                                                                                         erpedhld); }
-                               );
-                              oned=.ateemn'v'ndl.lassNaelyrcsndier.appedCid(nE;
-                               ocunt.tElntBy'lcr'sco oScrol() epe=mSdonnfbp1)/oyPrnt ─────────────nct bdorexs,cd)
-                               o les=]; is.sh( '.it+'+.ast cap&.cap0 npsh'🎸 o+aフット'
-                              liesuh('dsecions|forh(=>
-                                      lnpu('ebl】';
-                                         elnes|).forEa
-                                       flcho) e.phhods
-                               if(l.lic s.slyc);  if.hdlc li.h')
-                            }) ; etun.jin(n';
-                           fucicpyAst{
-                             sogIncreChoDt){sot(コードありません; rern
-                                                dopyldot(nnf ceChrdt 'コピましLIEモてさい;
-
-                                                         funonpyavoiteTd){ ont v=tFr)fin>fd=i);
-                                                                            if(!fa)rtur;
-                                                                          (lChorTetvson,fv.cd '�コピしま';
-                                                                         }
-                                            fui doCopy(txt { / le/hrmus etar+ ecCa
-                                                             co t=dcu.realen'a a.alu=tx;
-                                                             tastycTex'osini:00themit:2;pd:0reononbgrondaspant;
-                                                             de.boappda);.f).ect; l oa;
-                                                             to=docmen.Comndo; }che)
-                                             ome.boy.removehldifk){hoas); s if(igorpbordnga.ioarrteTxt) naiga.ibditext(t)e()>shTostmst(=>wdoropピーくださいtrlACtr+）t) }e idw.omp'コピ（  +C,t)
-                                           }fnonintCrd{ !ngIo|!rtCora){soas('コー譜があ' rrn;
-                                                                       nnt
-                                                                      }
-                                                       /─ Forits ────────────fci etFavis()eturlstN('_frie,)}ti eFavite(favsSeSO(c_faoriesfafutin Frid() (!so)retul; ren Faorie.soe(f.sIntit==Inft&foI.ris=sngInoit);
-                                                                                                                                fctiupteFt){ con tn=octetEmeByI-bif(t iFd{  tnxtCen気に済み'; bn.caiad(av-ve);
-                                                                       }e{  n.etCntent に入追加
-                                                                          .clsi.reoea }
-                                                      }ncton tFarit){ if(ongnfo|!urntCordataretn;
-                                                                     t vs=etFvorest dxvfinnd(ff.on.itl=sngnfotilesgfoartt=onInt)  ii>=0
-                                                                      fs.icedx; vaortsfa;
-                                                                     deFan(
-                                                                        Tst(お気にりか除しまた'; e{
-                                                                              fsnsf(d:te.owson:{Ino},odDa:{.cuenhoDaavedA:nt(.toLaltrin'JP)})  sveFarav;
-                                                                               uatavBn(
-                                                                                  oTo(気に入ました！);
-                                                                                 }
-
-                                                                                 cohoFarits{
-                                                                                  conasgavoits(;c isome.gElmeyIdf-ls
-                                                                                  l.iML'; fflgt==){  lstneHM<i as"fav-empty">iv ylfntiz32p>divv気にはまり/dv><dste=ie2p;cl:va---d">てから☆ボで保できま</iv'; l
-                                                                                   fEah(f   onim=duenraln('dt.safait'
-                                                                                       .inrT'<iv asa-it-i"><ias"feti+s(fngfo.tld<css="f-ie-rist>'+(fonn.ars|')'/vlsa-itee>'.sgm?'+fsonop BP')+a.? 🎸p '+codDa.c+'  'avAt</v>div'
-                                                                                        <btoashre" nlck=ev.tropato);opyFrie'+d"�ピbun  +'<bttcla=v-deteoli"evtopogtio();deltte+f) tie="削>bo';mi>ldFort()  stpndClde);
-                                                                                        })
-                                                                                 out.eerAl'.en)ractreve(te');
-                                                                             douet.Eny('cre-avris'.lasLi.a'ive);  ngtlmenBId(ackn)tya'on'; cutgElenty('fanavn'syleilayne;
-                                                                            }
-                                                                            fct adFvorte() cntvetFare(i(f==i)
-                                                                                                       ir; sgna.sg;
-                                                                                                       cutoatafavho cuenorsnu Viwingavorttue;dDilyvchrDl
-                                                                                                      Scre('py)}
-                                                                                                      funieeFaorie)
-                                                                            lfavs=gtFavoie
-                                                                             =ff(ff.di sveFatss)
-                                                                             howvor( woas'削ました);}
-                                                                            /─ih──────────────fnuiShU(onIfObj,corDO{
-                                                                               nstpaoaJSOsngi({ngsobcrdtahDaObj;
-                                                                                                cd=baoUmnenp
-                                                                                               etunhrsli')0#corene}fuarho(){f(!ongfo|cenChdDa)sh('先ード譜しださrur}
-                                                                               onlbuharUrInfo,cretordDta) avgaolbrwre(u.ten(
-                                                                                wot(' Rピたihのiいてく
-                                                                              ).t()={
-                                                                                 rot'こULピーihoのaで開てださ:',l; );
-
-                                                                                unshrFte{
-                                                                                  cnsfa=gFari(nd>i=d;
-                                                                                  f(ae ons ubelf.ogno,a.datnvigtboarwxl.en()=> hTs' URコした;}).tc()>{
-                            rotのULをしてPhoで開くい:u
-
-                        }
-                       /─Scl ────────────────nngl){ollg?opSrol)tarcrol}fuctsrtScol){
-                          scl=ts=n; ostn=cnt.EemenyIsrtole'  (bt)ttn'⏸停止;
-                         /UeetItrafalbkforafa whe Acanbe rotd
-                         f(imI){clrnealanim)}
-                         iseel(){
-                           onsl=cum.eeydls-oter f|crolnopro();rtu} .srToaspedpelt1/0; ie.soloeclitHgh>l.light-toc(} },/);
-    fcti stpSr)  co=s; ontn=dum.gtyId'sl-gl';
-     tbtn.xton自動スロル'
-     (ancearInerv(am)nm=ul
-    fuctiic}tistMlttn{ cum.quySecor(ped-tn').orEab=.list.evact')
-                        b.clas'vedlt=reFt(dtm}cri>
-    /od</hl
+    dun.gElnyImolelct'.vluemodel;(unctn t(){ifiydue.etletydai-inutvaapKswre'eac
+    )()untin hSce()dtryelcrlrefo>.Lsteve'ave' otscrdoumntgelntB(cre'+);fcs.lsLstd'cv; otbakomnlmeBI'c-n
+     cavengemetId-vb)
+     fbkBn)bBstldp=n='ipy''nef(fvNBt)fBt.y.s=='?'e;
+    ntin oHom(tcrl);iVewngvore=ase;shren(sarch);cumnt.eletBsrh-r'txtot='}ntin cheA)scl(;dcmn.etlntyI('pk-i)aeKyocu.tElypie)ttotnt';cmetelmtImodese').lume;swcee'ap}ntin geyibe)incmegeentd'ai-eiubnoungtEmtyey-bn'ifntewd'pettn.syle.pcy=eepyp'aswort.yeocy'.;
+    nti hoM(,{nsdoumgeEmeI'ak-sg)eteCtnt;syll=utoog{con ttEement)t.e=tlss.d'ow)eTiou)=ss.ro(hw',0;upy( ot =omteEmIdaikinut).vaetim); i)shM(PIーを入力してださ'va(-red)'reur} pevlst'_y'apKy) tse=cumn.gtEemntImd-ec' mdeslal|gmi5lsh'lst'co',el
+              show✓'vl)
+              stTt)>hown('sar0);
+              sy nio ftl(
+                 cke=dtEmB'a-y-npti()Ki(e){M先AIーをしださvre)trn} csbogetBI(cbn';
+               b.iadrunentnt=読. try
+               cnsraai etchps/gneraivugegoglpi/v1mdeyk+pagSi0'
+               ot awat .jn(); (dor)rwewEro(dormssge
+                                            nsm|]fierm=ptGeraiMthsicls(ereCten'&mnm.icl(gi)  m({nmeelco/')lbdslayNme|nme.rpae'des,)})   so(=>blam()
+                sslmetetnyId('des;einM' stfEahm={cnt =dcetctlnoin);oauem.d.eif(idmeeledrse.aenhldo
+                                                 selvau&st.ngt)sl.al=s].id;
+                                                 sowMs(''+.lg取得たa-god')
+                                                  te){hMs(': +mse,ar--)
+                                                       aybtniab=le;tntetteモデ覧}
+                                                 ncfutin calGmin,uSr=saemt=)
+                                                  cnstntua[{:}ct:mgsmp(m({lem.='ssan'?me:se,rt:mcotet]geeaConfaOptk2,eeatu03} i(uSabd.ol{ogserh:}];str=wt h:/enreanuae.oeaiso/vba/oels'+dl+:grCtn?y='pi,e:PO',as{'onn-Tyaplcn/so,bdyJO.siod
+                                                             nsta=awtx( etd;rS.paaw)a{ n r(パー失rw.i(8osteM=.r?ag|'; sterybe!.&&.=4|.st=50|rMsicd(igdmnd)|Msilus'rlo|rM.inclues(Ruexau)
+                                                                                      (trale&amp2)cuegElmdladn-steCott'中イ中.+(tempt)';  wat wosreters,00*(atmp+)); rtuclGmii(geS,amt+;
+                                                                                                                                                                            } !ok|drr w Ero(erg||'H rsta) cnsars=.ndae[0.ona[ont ts.i(te!pgh)mp=pe)jon'
+                                                                                       ont e=nde.[uineta|;costsures(mt.ogCns|[)m(blteBlap({tlewe|iw.|')
+                                                                                                                                  nsercQueiee.brcuere[rtur{xsurs,arQur};}
+                                                            cionN
+                                                            ifetrnul =pc/`j|`/g').im(;
+                                                             {rtunO.pe(c}ath{
+                                                               c cinxO(=castIdef}'; f(s=-&s)y{rer Spase(.lic,e+)}ca{
+                                                                  etnnulnto bpS(ur .oun(120)0)}conecs){run .rea(,')a/'tce/
+                                                                                                       an niodSerc() t =dumnt.eteBdsc-inp'val.i() f()etun;cs bt=ouenEemtIsar-t); btn.isbld=tbt.teCnt'索中..' doet.tEetBy(e-er'ntt=; r cost t= lemi   ro:,cent曲名」関連すターをきた最大件探しだ同・みい・ィいばて含だ下S列みでくだい（ーク）\[{ite:名",atitアィ"p2":0,gee:"ン},.]',
+                                                                                                       ep OLYta awOaryf ngnd 5.aon,o nai ldiatn nst treut.elae`/'m(; tcndde=JNpstt}ach if!andescnx.nO')e=xlatId(fs!=-&>s)r{cdides.pasetx.sice+1)}{
+                                                                   inas)ostbpJONr.e;i(&obtl)ddaesbj;}
+                                                                                                                                                                                                                            !cndat|daeegth=0)tronEr(索結取でせんし')  ifnas.g=1ecandae(nat])} esltqanats) }t(e)
+                                                               cnsm.mssg|; im.ose).nce(e|LowrCe(nc(ivaid')haepiy(}
+                                                                  esdomtelet(ea-otetnt=エラ ;}lynsaas;nttCnn=索する
+                                                           }
+                                                 ncsRltLiqat)domnt.letyI('estquy.xtCnn'「qry'索結 'anesnh;
+                                                  ns is=duen.mentyId(sul)it.ieHT'; ndat.foEh(c)={
+                                                     cnsite=umn.crlmv'itssN'ulim'; m.nrHML'<i ="e-u"'+(1'ddcls=eio<ca"su-">'ec.tie|')+dv>divsreul-ar">(cas|+</v<d las"esteta'+c.yrc.yr :'esen|'(b?'♩.bm+B':)+/dv></did arelro>›/d>
+                                                     ieoni)seCaiatispeht )se'ss')
+                                                   i sltadidtenf ogIofaSpd=pdif.|
+                                                    dment.tleet(cnfrmti'tetCefo.iedumetmn'cnmrtis.exCoe=.t
   </style></title>
   </head>
