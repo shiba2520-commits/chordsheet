@@ -227,12 +227,13 @@ select option{background:#1a1410}
     <div class="controls">
       <div class="speed-group">
         <span class="speed-label">速度</span>
-        <button class="speed-btn" data-m="0.25" onclick="setMult(this)">×0.25</button>
-        <button class="speed-btn" data-m="0.5" onclick="setMult(this)">×0.5</button>
-        <button class="speed-btn active" data-m="1" onclick="setMult(this)">×1</button>
-        <button class="speed-btn" data-m="1.5" onclick="setMult(this)">×1.5</button>
-        <button class="speed-btn" data-m="2" onclick="setMult(this)">×2</button>
-        <button class="speed-btn" data-m="3" onclick="setMult(this)">×3</button>
+        <button class="speed-btn" data-m="0.3" onclick="setMult(this)">0.6</button>
+        <button class="speed-btn" data-m="0.35" onclick="setMult(this)">0.7</button>
+        <button class="speed-btn" data-m="0.4" onclick="setMult(this)">0.8</button>
+        <button class="speed-btn" data-m="0.45" onclick="setMult(this)">0.9</button>
+        <button class="speed-btn active" data-m="0.5" onclick="setMult(this)">1</button>
+        <button class="speed-btn" data-m="0.55" onclick="setMult(this)">1.1</button>
+        <button class="speed-btn" data-m="0.6" onclick="setMult(this)">1.2</button>
       </div>
       <button class="scroll-btn" id="scroll-toggle" onclick="toggleScroll()">▶ 自動スクロール</button>
     </div>
@@ -274,7 +275,7 @@ let songInfo=null;
 let currentChordData=null;
 let currentSources=null;
 let isViewingFavorite=false;
-let scrolling=false,baseSpeed=40,speedMult=1,animId=null,lastTs=null;
+let scrolling=false,baseSpeed=40,speedMult=0.5,animId=null,lastTs=null;
 
 // ── Hardcoded songs (always accurate) ────────────────
 const HARDCODED_SONGS = [{"songInfo": {"title": "チェックのワンピース", "artist": "back number", "bpm": 118, "year": 2011, "genre": "J-POP"}, "chordData": {"capo": 1, "sections": [{"label": "イントロ", "lines": [{"chords": "CM7  G  D  B7  Em", "lyric": ""}]}, {"label": "Aメロ", "lines": [{"chords": "CM7  G", "lyric": "夜の街を見下ろしながら"}, {"chords": "D  B7  Em", "lyric": "なんとなく気付いた事は"}, {"chords": "CM7  G", "lyric": "あんなに綺麗に光ってたってさ"}, {"chords": "D  B7  Em", "lyric": "自分は見えないんだよな"}, {"chords": "CM7  D", "lyric": "この街は色とりどりに"}, {"chords": "Bm  B7  Em", "lyric": "光と陰を連れて明日へ向かう"}, {"chords": "CM7  D", "lyric": "あの中でも僕達も"}, {"chords": "G  G7", "lyric": "光っていたのかな"}]}, {"label": "サビ", "lines": [{"chords": "", "lyric": "これから"}, {"chords": "CM7  D", "lyric": "チェックのワンピースを"}, {"chords": "Bm  B7  Em", "lyric": "どこかで見つける度に"}, {"chords": "CM7  D", "lyric": "あぁ君を思い出すのかな"}, {"chords": "G  G7", "lyric": "嫌だな 嫌だな"}, {"chords": "", "lyric": "それでも"}, {"chords": "CM7  D", "lyric": "いつかまた出会えたら僕ならもう大丈夫だと"}, {"chords": "Bm  B7  Em", "lyric": "言えるように"}, {"chords": "CM7  D", "lyric": ""}, {"chords": "G  G7", "lyric": "君のいない明日を光らせよう"}]}, {"label": "Aメロ2", "lines": [{"chords": "CM7  G", "lyric": "君の頼んだものの方がさ"}, {"chords": "D  B7  Em", "lyric": "なんでも美味しかったり"}, {"chords": "CM7  G", "lyric": "いつも君の方が正しかったし"}, {"chords": "D  B7  Em", "lyric": "別れも仕方ないのだろう"}, {"chords": "CM7  D  Bm  B7  Em", "lyric": ""}, {"chords": "CM7  D  G  G7", "lyric": ""}, {"chords": "CM7  D", "lyric": "君からもらったもの"}, {"chords": "Bm  B7  Em", "lyric": "全てを思い出せるわけじゃないけど"}, {"chords": "CM7  D", "lyric": "大事にしていたんだよ"}, {"chords": "G  G7", "lyric": "大事にしてたんだよ"}]}, {"label": "サビ2", "lines": [{"chords": "", "lyric": "これから"}, {"chords": "CM7  D", "lyric": "チェックのワンピースを"}, {"chords": "Bm  B7  Em", "lyric": "どこかで見つける度に"}, {"chords": "CM7  D", "lyric": "あぁ君を思い出すのかな"}, {"chords": "G  G7", "lyric": "嫌だな 嫌だな"}, {"chords": "", "lyric": "それでも"}, {"chords": "CM7  D", "lyric": "いつかまた出会えたら"}, {"chords": "Bm  B7  Em", "lyric": "僕ならもう大丈夫だと言えるように"}, {"chords": "CM7  D", "lyric": ""}, {"chords": "G  G7", "lyric": "君より似合う誰かを見つけるから"}]}, {"label": "アウトロ", "lines": [{"chords": "CM7  D  Bm  Em", "lyric": ""}, {"chords": "CM7  D  G  G7", "lyric": ""}, {"chords": "CM7  G  D  B7  Em", "lyric": ""}]}]}}];
