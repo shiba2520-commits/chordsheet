@@ -103,6 +103,15 @@ select option{background:#1a1410}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px}
+.chord-tap{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;text-decoration-color:var(--gold-dim);transition:color .15s,text-decoration-color .15s}
+.chord-tap:hover,.chord-tap:active{color:#fff;text-decoration-color:#fff}
+#chord-modal{display:none;position:fixed;inset:0;background:#000000cc;z-index:1000;align-items:center;justify-content:center;padding:20px}
+#chord-modal.show{display:flex}
+.chord-modal-card{background:#1a1208;border:1px solid var(--gold-dim);border-radius:16px;padding:24px 28px;text-align:center;animation:fadeIn .2s ease;min-width:200px}
+.chord-modal-name{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:.02em}
+.chord-modal-nodata{font-size:12px;color:var(--text-dim);font-family:'Space Mono',monospace;padding:24px 0}
+.chord-modal-close{margin-top:16px;background:none;border:1px solid var(--gold-dim);color:var(--gold);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;padding:7px 22px;border-radius:20px;cursor:pointer;transition:background .2s}
+.chord-modal-close:hover{background:#c8a96e11}
 .result-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #c8a96e18;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .2s;background:#ffffff04}
 .result-item:hover{background:#c8a96e0a;border-color:#c8a96e44}
 .result-num{font-family:'Space Mono',monospace;font-size:13px;color:var(--gold);opacity:.6;width:20px;flex-shrink:0;text-align:center}
@@ -588,7 +597,7 @@ function renderDisplay(data, result, isSaved=false){
     const lbl=document.createElement('div');lbl.className='section-label';lbl.textContent=sec.label;inner.appendChild(lbl);
     (sec.lines||[]).forEach(line=>{
       const b=document.createElement('div');b.className='line-block';
-      b.innerHTML='<div class="chord-line">'+esc(line.chords||'')+'</div><div class="lyric-line">'+esc(line.lyric||'')+'</div>';
+      b.innerHTML='<div class="chord-line">'+chordSpans(line.chords||'')+'</div><div class="lyric-line">'+esc(line.lyric||'')+'</div>';
       inner.appendChild(b);
     });
   });
@@ -786,6 +795,124 @@ function setMult(btn){
   btn.classList.add('active');
   speedMult=parseFloat(btn.dataset.m);
 }
+// ── Chord Diagram ─────────────────────────────────────────────
+// frets: [E(low), A, D, G, B, e(high)]  -1=mute  0=open  N=fret
+const CHORD_DB = {
+  'C':    {frets:[-1,3,2,0,1,0]},
+  'CM7':  {frets:[-1,3,2,0,0,0]},
+  'Cm':   {frets:[-1,3,5,5,4,3],baseFret:3,barre:{fret:3,from:1}},
+  'D':    {frets:[-1,-1,0,2,3,2]},
+  'Dm':   {frets:[-1,-1,0,2,3,1]},
+  'D7':   {frets:[-1,-1,0,2,1,2]},
+  'DM7':  {frets:[-1,-1,0,2,2,2]},
+  'E':    {frets:[0,2,2,1,0,0]},
+  'Em':   {frets:[0,2,2,0,0,0]},
+  'Em7':  {frets:[0,2,2,0,3,0]},
+  'E7':   {frets:[0,2,0,1,0,0]},
+  'F':    {frets:[1,3,3,2,1,1],barre:{fret:1,from:0}},
+  'FM7':  {frets:[-1,-1,3,2,1,0]},
+  'G':    {frets:[3,2,0,0,0,3]},
+  'Gm':   {frets:[3,5,5,3,3,3],barre:{fret:3,from:0}},
+  'G7':   {frets:[3,2,0,0,0,1]},
+  'GM7':  {frets:[3,2,0,0,0,2]},
+  'A':    {frets:[-1,0,2,2,2,0]},
+  'Am':   {frets:[-1,0,2,2,1,0]},
+  'Am7':  {frets:[-1,0,2,0,1,0]},
+  'A7':   {frets:[-1,0,2,0,2,0]},
+  'AM7':  {frets:[-1,0,2,1,2,0]},
+  'B':    {frets:[-1,2,4,4,4,2],baseFret:2,barre:{fret:2,from:1}},
+  'Bm':   {frets:[-1,2,4,4,3,2],baseFret:2,barre:{fret:2,from:1}},
+  'Bm7':  {frets:[-1,2,4,2,3,2],baseFret:2,barre:{fret:2,from:1}},
+  'B7':   {frets:[-1,2,1,2,0,2]},
+};
+
+function buildChordSVG(name) {
+  const ch = CHORD_DB[name];
+  if (!ch) return null;
+  const W=160, H=175, pl=20, pt=40, sg=20, fg=28, dr=9;
+  const strings=6, fretCount=4;
+  const base = ch.baseFret||1;
+  const showNut = base===1;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<rect width="${W}" height="${H}" fill="#1a1208" rx="12"/>`;
+  // String lines
+  for(let i=0;i<strings;i++){
+    const x=pl+i*sg;
+    s+=`<line x1="${x}" y1="${pt}" x2="${x}" y2="${pt+fretCount*fg}" stroke="#c8a96e44" stroke-width="1.5"/>`;
+  }
+  // Fret lines
+  for(let f=0;f<=fretCount;f++){
+    const y=pt+f*fg;
+    const isNut=showNut&&f===0;
+    s+=`<line x1="${pl}" y1="${y}" x2="${pl+(strings-1)*sg}" y2="${y}" stroke="${isNut?'#e8e0d0':'#c8a96e33'}" stroke-width="${isNut?4:1.5}"/>`;
+  }
+  // Fret number
+  if(!showNut){
+    s+=`<text x="${pl+(strings-1)*sg+9}" y="${pt+fg*0.65}" fill="#c8a96e" font-size="11" font-family="monospace">${base}fr</text>`;
+  }
+  // Barre
+  if(ch.barre){
+    const by=pt+(ch.barre.fret-base+0.5)*fg;
+    const bx1=pl+(ch.barre.from||0)*sg;
+    const bx2=pl+(ch.barre.to!==undefined?ch.barre.to:strings-1)*sg;
+    s+=`<rect x="${bx1-dr*0.5}" y="${by-dr}" width="${bx2-bx1+dr}" height="${dr*2}" fill="#c8a96e" rx="${dr}"/>`;
+  }
+  // Open/Mute markers
+  for(let i=0;i<strings;i++){
+    const x=pl+i*sg, fret=ch.frets[i];
+    if(fret<0){
+      const d=5;
+      s+=`<line x1="${x-d}" y1="${pt-17-d}" x2="${x+d}" y2="${pt-17+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+      s+=`<line x1="${x+d}" y1="${pt-17-d}" x2="${x-d}" y2="${pt-17+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+    } else if(fret===0){
+      s+=`<circle cx="${x}" cy="${pt-17}" r="5" fill="none" stroke="#c8a96e88" stroke-width="1.5"/>`;
+    }
+  }
+  // Finger dots
+  for(let i=0;i<strings;i++){
+    const fret=ch.frets[i];
+    if(fret>0){
+      const x=pl+i*sg, y=pt+(fret-base+0.5)*fg;
+      const barre=ch.barre;
+      const covByBarre=barre&&barre.fret===fret&&i>=(barre.from||0)&&i<=(barre.to!==undefined?barre.to:strings-1);
+      if(!covByBarre) s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
+    }
+  }
+  s+='</svg>';
+  return s;
+}
+
+function chordSpans(text){
+  if(!text) return '';
+  return text.split(/(\s+)/).map(part=>{
+    if(/^\s+$/.test(part)) return part;
+    return `<span class="chord-tap" onclick="showChordDiagram('${part}')">${esc(part)}</span>`;
+  }).join('');
+}
+
+function showChordDiagram(name){
+  document.getElementById('chord-modal-name').textContent=name;
+  const svg=buildChordSVG(name);
+  const diagramEl=document.getElementById('chord-modal-diagram');
+  if(svg){
+    diagramEl.innerHTML=svg;
+  } else {
+    diagramEl.innerHTML='<div class="chord-modal-nodata">コード図データなし</div>';
+  }
+  document.getElementById('chord-modal').classList.add('show');
+}
+function closeChordModal(e){
+  if(!e||e.target===document.getElementById('chord-modal')||e.type==='click')
+    document.getElementById('chord-modal').classList.remove('show');
+}
+
 </script>
+<div id="chord-modal" onclick="closeChordModal(event)">
+  <div class="chord-modal-card" onclick="event.stopPropagation()">
+    <div class="chord-modal-name" id="chord-modal-name"></div>
+    <div id="chord-modal-diagram"></div>
+    <button class="chord-modal-close" onclick="closeChordModal()">閉じる</button>
+  </div>
+</div>
 </body>
 </html>
