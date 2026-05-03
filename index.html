@@ -453,47 +453,212 @@ async function doConfirm(){
   document.getElementById('loading-sub').textContent=songInfo.title+' / '+songInfo.artist;
   showScreen('loading');
 
-  // ── Check hardcoded data first ──
-  const hc=findHardcoded(songInfo.title, songInfo.artist);
+  // ── 1. Check hardcoded ──────────────────────────────
+  const hc=findHardcoded(songInfo.title,songInfo.artist);
   if(hc){
-    songInfo={...songInfo,...hc.songInfo};
-    currentChordData=hc.chordData;
-    currentSources={sources:[{uri:'https://ufret.jp',title:'U-FRET（固定データ）'}],searchQueries:[]};
-    isViewingFavorite=false;
-    renderDisplay(hc.chordData, currentSources);
-    showScreen('display');
-    showToast('📌 保存済みコード譜を表示しました');
-    return;
+    songInfo={...songInfo,...hc.songInfo};currentChordData=hc.chordData;
+    currentSources={sources:[{uri:'https://ja.chordwiki.org',title:'固定データ'}],searchQueries:[]};
+    isViewingFavorite=false;renderDisplay(hc.chordData,currentSources);showScreen('display');
+    showToast('📌 保存済みコード譜を表示しました');return;
   }
 
+  // ── 2. Try ChordWiki ────────────────────────────────
   try{
+    document.getElementById('loading-sub').textContent='ChordWikiを検索中...';
+    const cwResult = await fetchChordWiki(songInfo.title, songInfo.artist);
+    if(cwResult){
+      currentChordData=cwResult.chordData;
+      currentSources={sources:[{uri:cwResult.url,title:'ChordWiki'}],searchQueries:[]};
+      isViewingFavorite=false;
+      renderDisplay(cwResult.chordData,currentSources);
+      showScreen('display');
+      return;
+    }
+  }catch(e){ console.warn('ChordWiki failed:', e.message); }
+
+  // ── 3. Fall back to Gemini search ──────────────────
+  try{
+    document.getElementById('loading-sub').textContent='ネットで検索中...';
     const prompt='「'+songInfo.title+'」('+songInfo.artist+')のギターコード譜を検索して取得してください。'
-      +'U-FRET、ultimate-guitar、コード楽譜.com、J-Guitar等のコードサイトを参照し、'
       +'以下のJSONのみで返してください（マークダウン不要）:\n'
       +'{"capo":0,"sections":[{"label":"セクション名","lines":[{"chords":"Em  G  D  C","lyric":"歌詞の行"}]}]}\n'
-      +'- capo: カポフレット番号（カポなしは0）\n'
-      +'- 全セクション・全歌詞を含めること\n'
-      +'- JSONを最後まで完全に出力すること';
-    const result=await callGemini(
-      [{role:'user',content:prompt}],
-      'You are a guitar chord chart assistant. Search the web for accurate chord data for this song. Reply ONLY with complete raw JSON. No markdown, no explanation.',
-      true
-    );
+      +'- capo: カポフレット番号（カポなしは0）\n- 全セクション・全歌詞を含めること\n- JSONを最後まで完全に出力すること';
+    const result=await callGemini([{role:'user',content:prompt}],
+      'You are a guitar chord chart assistant. Search the web for accurate chord data. Reply ONLY with complete raw JSON. No markdown.',true);
     const data=pJSON(result.text);
     if(!data||!data.sections||data.sections.length===0){
       document.getElementById('confirm-error').textContent='⚠ コード情報を取得できませんでした。しばらく待ってから再度お試しください。';
       showScreen('confirm');return;
     }
-    currentChordData=data;
-    currentSources=result;
-    isViewingFavorite=false;
-    renderDisplay(data,result);
-    showScreen('display');
+    currentChordData=data;currentSources=result;isViewingFavorite=false;
+    renderDisplay(data,result);showScreen('display');
   }catch(e){
-    document.getElementById('confirm-error').textContent='エラー: '+e.message;
-    showScreen('confirm');
+    document.getElementById('confirm-error').textContent='エラー: '+e.message;showScreen('confirm');
   }
 }
+
+// ── ChordWiki fetch & parse ──────────────────────────
+async function fetchChordWiki(title, artist){
+  // Step 1: search
+  const q=encodeURIComponent(title+' '+artist);
+  const searchUrl='https://ja.chordwiki.org/search.html?q='+q;
+  let searchHtml;
+  try{ searchHtml=await fetchWithProxy(searchUrl); }
+  catch(e){
+    // Try title only
+    const q2=encodeURIComponent(title);
+    searchHtml=await fetchWithProxy('https://ja.chordwiki.org/search.html?q='+q2);
+  }
+
+  // Extract first song link from search results
+  const doc=new DOMParser().parseFromString(searchHtml,'text/html');
+  // ChordWiki links are like /wiki/曲名 or /wiki.cgi?t=曲名
+  const links=[...doc.querySelectorAll('a[href*="/wiki/"],a[href*="wiki.cgi"]')];
+  let songUrl=null;
+  for(const a of links){
+    const href=a.href||a.getAttribute('href');
+    if(href&&(href.includes('/wiki/')&&!href.includes('/wiki/search'))
+       ||(href&&href.includes('c=view'))){
+      songUrl=href.startsWith('http')?href:'https://ja.chordwiki.org'+href;
+      break;
+    }
+  }
+  if(!songUrl){
+    // Try direct URL with title
+    songUrl='https://ja.chordwiki.org/wiki/'+encodeURIComponent(title);
+  }
+
+  // Step 2: fetch song page
+  const songHtml=await fetchWithProxy(songUrl);
+  const songDoc=new DOMParser().parseFromString(songHtml,'text/html');
+
+  // Step 3: parse
+  const chordData=parseChordWikiPage(songDoc);
+  if(!chordData||!chordData.sections||chordData.sections.length===0) return null;
+  return {chordData, url:songUrl};
+}
+
+async function fetchWithProxy(url){
+  const proxies=[
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+    u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  ];
+  for(const make of proxies){
+    try{
+      const r=await fetch(make(url),{signal:AbortSignal.timeout(7000)});
+      if(r.ok){const t=await r.text();if(t.length>200)return t;}
+    }catch{}
+  }
+  throw new Error('All proxies failed for: '+url);
+}
+
+function parseChordWikiPage(doc){
+  // Find capo
+  let capo=0;
+  const capoMatch=(doc.body.textContent||'').match(/[Cc]apo[:\s]*(\d+)/);
+  if(capoMatch) capo=parseInt(capoMatch[1]);
+
+  // Find the chord content area
+  // ChordWiki renders chord content in pre or specific div
+  let sourceText='';
+
+  // Try to get raw ChordPro source from textarea
+  const textarea=doc.querySelector('textarea#source,textarea[name="source"],textarea');
+  if(textarea&&textarea.value){
+    sourceText=textarea.value;
+    return parseChordPro(sourceText, capo);
+  }
+
+  // Try the rendered chord area
+  const chordArea=doc.querySelector('#chord,#main_chord,.chord_area,#chordarea,pre,.pre');
+  if(chordArea){
+    sourceText=chordArea.innerText||chordArea.textContent||'';
+    if(sourceText.length>50) return parseRenderedChordWiki(sourceText, capo);
+  }
+
+  // Fallback: scrape the entire body
+  const body=doc.body.innerText||doc.body.textContent||'';
+  return parseRenderedChordWiki(body, capo);
+}
+
+function parseChordPro(text, capo=0){
+  // Parse [chord]lyric format
+  const sections=[];
+  let cur={label:'Intro', lines:[]};
+  const labelMap={
+    'intro':'イントロ','verse':'Aメロ','chorus':'サビ','bridge':'ブリッジ','outro':'アウトロ',
+    'start_of_verse':'Aメロ','start_of_chorus':'サビ','start_of_bridge':'ブリッジ',
+    'end_of_verse':'','end_of_chorus':'','end_of_bridge':''
+  };
+  for(const raw of text.split('\n')){
+    const line=raw.trim();
+    // Directive like {capo:1} or {start_of_chorus}
+    const dir=line.match(/^\{([^}]+)\}/);
+    if(dir){
+      const key=dir[1].toLowerCase().replace(/[_\s]+/g,'_').split(':')[0];
+      if(key.startsWith('start_of')||key in labelMap){
+        if(cur.lines.length>0){sections.push(cur);}
+        const label=labelMap[key]||dir[1];
+        if(label) cur={label,lines:[]};
+      } else if(key==='capo'){
+        capo=parseInt(dir[1].split(':')[1])||capo;
+      }
+      continue;
+    }
+    if(!line) continue;
+    // Extract chords from [chord] markers
+    const chords=[];
+    const lyric=line.replace(/\[([^\]]+)\]/g,(_,c)=>{chords.push(c);return '';}).trim();
+    cur.lines.push({chords:chords.join('  '),lyric});
+  }
+  if(cur.lines.length>0) sections.push(cur);
+  return {capo, sections:sections.filter(s=>s.lines.length>0)};
+}
+
+function parseRenderedChordWiki(text, capo=0){
+  // ChordWiki rendered text has chords inline like: CM7夜の街をGろしながら
+  // Split into lines and try to separate chord-only lines from lyric lines
+  const rawLines=text.split('\n').map(l=>l.trim()).filter(l=>l);
+  const sections=[];
+  let cur={label:'Verse 1', lines:[]};
+  let sectionCount=1;
+  const chordPattern=/^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add|dom)?[0-9]?[^　-鿿＀-￯一-鿿]*$/;
+
+  for(let i=0;i<rawLines.length;i++){
+    const line=rawLines[i];
+    // Section markers
+    if(/(イントロ|intro)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'イントロ',lines:[]};continue;}
+    if(/(Aメロ|verse\s*1|aメロ)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'Aメロ',lines:[]};continue;}
+    if(/(Bメロ|verse\s*2|bメロ)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'Bメロ',lines:[]};continue;}
+    if(/(サビ|chorus)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'サビ',lines:[]};continue;}
+    if(/(アウトロ|outro)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'アウトロ',lines:[]};continue;}
+    if(/(ブリッジ|bridge|大サビ)/i.test(line)){if(cur.lines.length>0)sections.push(cur);cur={label:'ブリッジ',lines:[]};continue;}
+
+    // Chord-only line (next line is lyric)
+    const isChordLine=line.split(/\s+/).every(w=>!w||/^[A-G][#b]?(m7?|M7|maj7|min7?|dim7?|aug|sus[24]?|add9|7|9|11|13)?(\([^)]+\))?(\/[A-G][#b]?)?$/.test(w));
+
+    if(isChordLine && i+1<rawLines.length){
+      const nextLine=rawLines[i+1];
+      const nextHasJP=/[　-鿿＀-￯一-鿿぀-ヿ]/.test(nextLine);
+      if(nextHasJP){
+        cur.lines.push({chords:line, lyric:nextLine});
+        i++; continue;
+      }
+    }
+
+    // Check if line has inline chords (Japanese text present)
+    const hasJP=/[぀-ヿ一-鿿]/.test(line);
+    if(hasJP){
+      cur.lines.push({chords:'', lyric:line});
+    } else if(isChordLine){
+      cur.lines.push({chords:line, lyric:''});
+    }
+  }
+  if(cur.lines.length>0) sections.push(cur);
+  return {capo, sections:sections.filter(s=>s.lines.length>0)};
+}
+
 
 async function doReroll(){
   if(!songInfo)return;
