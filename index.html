@@ -172,25 +172,33 @@ select option{background:#1a1410}
 
   <!-- SEARCH -->
   <div class="screen" id="screen-search">
-    <div style="text-align:center;margin-bottom:10px">
+    <div style="text-align:center;margin-bottom:8px">
       <span class="hero-jp">コード譜を</span>
       <span class="hero-en">instantly.</span>
     </div>
     <p class="hero-sub">曲名を入力するだけで歌詞とギターコードを表示します</p>
-    <div class="igroup">
+
+    <!-- 検索ボックス -->
+    <div class="igroup" style="margin-bottom:0">
       <input type="text" id="search-input" placeholder="曲名を入力（例: チェックのワンピース）" onkeydown="if(event.key==='Enter')doSearch()">
       <button class="btn-primary" id="search-btn" onclick="doSearch()">検索する</button>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+    </div>
+    <p class="msg error" id="search-error" style="margin:6px 0 0"></p>
+
+    <!-- URL入力 -->
+    <div style="margin-top:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="flex:1;height:1px;background:var(--gold-faint)"></div>
         <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">または</span>
         <div style="flex:1;height:1px;background:var(--gold-faint)"></div>
       </div>
-      <input type="text" id="url-input" placeholder="ChordWikiのURLを貼り付け" onkeydown="if(event.key==='Enter')doFetchUrl()">
+      <input type="text" id="url-input" placeholder="ChordWiki / U-FRETのURLを貼り付け" onkeydown="if(event.key==='Enter')doFetchUrl()" style="margin-bottom:6px">
       <button class="btn-ghost" id="url-btn" onclick="doFetchUrl()">🔗 URLから取得</button>
-      <button class="btn-ghost" id="paste-btn" onclick="showPasteScreen()" style="margin-top:6px">📋 ChordWikiからコピペして登録</button>
+      <button class="btn-ghost" id="paste-btn" onclick="showPasteScreen()" style="margin-top:6px">📋 コピペして登録</button>
     </div>
-    <p class="msg error" id="search-error"></p>
-    <div id="library-section" style="margin-top:30px"></div>
+
+    <!-- 登録済み一覧 -->
+    <div id="library-section" style="margin-top:24px"></div>
   </div>
 
   <!-- PASTE SCREEN -->
@@ -486,17 +494,16 @@ function renderLibraryList(){
   const el=document.getElementById('library-section');
   if(!el) return;
   if(lib.length===0){ el.innerHTML=''; return; }
-  let html='<div style="font-size:11px;color:var(--text-dim);font-family:Space Mono,monospace;margin-bottom:10px;letter-spacing:0.1em">登録済み '+lib.length+'曲</div>';
+  let html='<div style="font-size:11px;color:var(--text-dim);font-family:Space Mono,monospace;margin-bottom:8px;letter-spacing:0.1em">📚 登録済み '+lib.length+'曲</div>';
   const sorted=[...lib].sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   for(const song of sorted.slice(0,30)){
     const id=song.id;
-    html+='<div class="result-item" style="margin-bottom:8px" onclick="openLibrarySong(\''+id+'\')">'
-      +'<div class="result-info">'
-        +'<div class="result-title">'+esc(song.songInfo.title||'')+'</div>'
-        +'<div class="result-artist">'+esc(song.songInfo.artist||'（アーティスト不明）')+'</div>'
-        +(song.songInfo.bpm?'<div class="result-meta">♩ '+song.songInfo.bpm+' BPM</div>':'')
+    html+='<div class="result-item" style="margin-bottom:6px;padding:10px 12px;display:flex;align-items:center;cursor:pointer" onclick="openLibrarySong(\''+id+'\')">'
+      +'<div class="result-info" style="flex:1;min-width:0">'
+        +'<div class="result-title" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(song.songInfo.title||'')+'</div>'
+        +'<div class="result-artist" style="font-size:12px;margin-top:2px">'+esc(song.songInfo.artist||'（アーティスト不明）')+'</div>'
       +'</div>'
-      +'<div onclick="event.stopPropagation();deleteLibrarySong(\''+id+'\')" style="padding:8px;color:var(--text-dim);cursor:pointer">×</div>'
+      +'<div onclick="event.stopPropagation();deleteLibrarySong(\''+id+'\')" style="padding:8px 8px 8px 16px;color:var(--text-dim);font-size:18px;flex-shrink:0">×</div>'
     +'</div>';
   }
   el.innerHTML=html;
@@ -696,18 +703,27 @@ async function doSearch(){
 
 async function fetchWithProxy(url){
   const WORKER='https://chordsheet-proxy.shiba2520.workers.dev/?url=';
-  const r=await fetch(WORKER+encodeURIComponent(url),{signal:AbortSignal.timeout(15000)});
+  let r;
+  try{
+    r=await fetch(WORKER+encodeURIComponent(url),{signal:AbortSignal.timeout(15000)});
+  }catch(e){
+    throw new Error('Worker接続失敗: '+e.message.slice(0,60));
+  }
   const t=await r.text();
-  if(!t||t.length<200) throw new Error('レスポンスなし(status='+r.status+')');
-  if(t.startsWith('fetch error')||t.startsWith('url param')) throw new Error(t.slice(0,80));
+  console.log('Worker response: status='+r.status+' length='+t.length+' preview='+t.slice(0,100));
+  if(!t||t.length<200) throw new Error('Worker応答短すぎ(status='+r.status+',len='+t.length+')');
+  if(t.startsWith('fetch error')) throw new Error('Worker fetch失敗: '+t.slice(0,60));
+  if(t.startsWith('url param')) throw new Error('WorkerパラメータエラーURL確認を');
   return t;
 }
 
 async function doFetchUrl(){
   const url=document.getElementById('url-input').value.trim();
   if(!url){ document.getElementById('search-error').textContent='URLを入力してください'; return; }
-  if(!url.includes('chordwiki.org')){
-    document.getElementById('search-error').textContent='ChordWikiのURLを入力してください'; return;
+  const isChordWiki=url.includes('chordwiki.org');
+  const isUfret=url.includes('ufret.jp');
+  if(!isChordWiki&&!isUfret){
+    document.getElementById('search-error').textContent='ChordWikiまたはU-FRETのURLを入力してください'; return;
   }
   const btn=document.getElementById('url-btn');
   btn.disabled=true; btn.textContent='取得中...';
@@ -717,19 +733,33 @@ async function doFetchUrl(){
   showScreen('loading');
   try{
     let html=null;
+    let proxyErr='';
     try{
       html=await fetchWithProxy(url);
-    }catch(e){ console.warn('proxy failed:',e.message); }
+    }catch(e){
+      proxyErr=e.message;
+      console.warn('proxy failed:',e.message);
+    }
 
     if(!html||html.length<500){
       document.getElementById('search-error').innerHTML=
-        'ChordWikiへのアクセスに失敗しました（プロキシ不可）。<br>'
+        'アクセス失敗: '+esc(proxyErr||'不明なエラー')+'<br>'
         +'<a href="'+url+'" target="_blank" style="color:var(--gold)">→ ChordWikiを直接開く ↗</a>';
       showScreen('search'); return;
     }
 
     document.getElementById('loading-sub').textContent='コード譜を解析中...';
     const doc=new DOMParser().parseFromString(html,'text/html');
+
+    // DEBUG: show class names found in HTML for U-FRET analysis
+    if(isUfret){
+      const allEls=[...doc.querySelectorAll('[class]')];
+      const classes=new Set();
+      allEls.forEach(el=>(el.className||'').split(' ').forEach(c=>c&&classes.add(c)));
+      console.log('U-FRET classes:', [...classes].join(', '));
+      // Also show first 2000 chars of body
+      console.log('U-FRET body preview:', (doc.body.innerHTML||'').slice(0,3000));
+    }
 
     const titleFromUrl=decodeURIComponent((url.split('/wiki/').pop()||'').replace(/[?#].*$/u,'')).trim();
     const bodyText=doc.body.textContent||'';
@@ -749,7 +779,7 @@ async function doFetchUrl(){
     const bpmMatch=bodyText.match(/BPM[：: ]*([0-9]+)/i);
     if(bpmMatch) bpm=parseInt(bpmMatch[1]);
 
-    const chordData=extractChordDataFromDOM(doc, capo);
+    const chordData=extractChordDataFromDOM(doc, capo, isUfret);
 
     if(!chordData||!chordData.sections||chordData.sections.length===0){
       document.getElementById('search-error').innerHTML=
@@ -780,7 +810,10 @@ async function doFetchUrl(){
   }finally{ btn.disabled=false; btn.textContent='🔗 URLから取得'; }
 }
 
-function extractChordDataFromDOM(doc, capo){
+function extractChordDataFromDOM(doc, capo, isUfret){
+  if(isUfret) return extractUfretDOM(doc, capo);
+
+  // ChordWiki: try textarea first
   const textarea=doc.querySelector('textarea');
   if(textarea){
     const src=textarea.value||textarea.textContent||'';
@@ -842,6 +875,71 @@ function extractChordDataFromDOM(doc, capo){
   const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
   if(cleaned.length===0) return parsePastedChordSheet(doc.body.textContent||'', capo);
   if(!cleaned[0].label) cleaned[0].label='イントロ';
+  return {capo:capo||0, sections:cleaned};
+}
+
+function extractUfretDOM(doc, capo){
+  // U-FRET structure: .chord-block or rows of chord+lyric pairs
+  // Each chord-block has .chord (chord name) and .lyric (lyrics)
+  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe,noscript').forEach(el=>el.remove());
+
+  const sections=[];
+  let curSection={label:'', lines:[]};
+
+  function pushSection(label){
+    if(curSection.lines.length>0) sections.push(curSection);
+    curSection={label,lines:[]};
+  }
+
+  // U-FRET uses <div class="row"> containing multiple <div class="chord-block">
+  // Each chord-block has <div class="chord">Em7</div><div class="lyric">歌詞</div>
+  const rows=doc.querySelectorAll('.row,[class*="chord-row"],[class*="line"]');
+
+  if(rows.length>0){
+    for(const row of rows){
+      const cls=(row.className||'').toLowerCase();
+      // Section label
+      if(cls.includes('section')||cls.includes('label')||cls.includes('title')){
+        pushSection(normalizeSection(row.textContent.trim()));
+        continue;
+      }
+      // Chord blocks in this row
+      const blocks=row.querySelectorAll('[class*="chord-block"],[class*="chord_block"],.unit');
+      if(blocks.length>0){
+        const chords=[], lyrics=[];
+        for(const b of blocks){
+          const c=b.querySelector('[class*="chord"],[class*="code"]');
+          const l=b.querySelector('[class*="lyric"],[class*="word"],[class*="text"]');
+          chords.push(c?c.textContent.trim():'');
+          lyrics.push(l?l.textContent.trim():'');
+        }
+        const chordLine=chords.filter(c=>c).join('  ');
+        const lyricLine=lyrics.join('');
+        if(chordLine||lyricLine){
+          curSection.lines.push({chords:chordLine, lyric:lyricLine});
+        }
+        continue;
+      }
+      // Plain text row
+      const txt=row.textContent.trim();
+      if(txt) curSection.lines.push({chords:'', lyric:txt});
+    }
+  } else {
+    // Fallback: look for any chord spans
+    const chordSpans=doc.querySelectorAll('[class*="chord"],[class*="code"]');
+    if(chordSpans.length>0){
+      for(const span of chordSpans){
+        const chord=span.textContent.trim();
+        const lyric=(span.nextSibling&&span.nextSibling.textContent||'').trim();
+        if(chord) curSection.lines.push({chords:chord, lyric});
+      }
+    }
+  }
+
+  if(curSection.lines.length>0) sections.push(curSection);
+  const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
+  if(cleaned.length===0) return null;
+  if(!cleaned[0].label) cleaned[0].label='Verse';
   return {capo:capo||0, sections:cleaned};
 }
 
