@@ -585,7 +585,48 @@ function savePastedSong(){
 }
 
 // ── Parser for pasted ChordWiki text ──────────────────
+function stripChordWikiHeader(raw){
+  if(!raw) return raw;
+  const lines=raw.split('\n');
+  // Find the line with 歌：or 作詞・作曲 or Capo or first chord/lyric line
+  const headerEndPatterns=[
+    /歌[：:]/,
+    /作詞[・・]/,
+    /作曲[：:]/,
+    /[Cc]apo/,
+    /BPM/,
+  ];
+  // Also detect: if a line has actual chord or lyric content (not just menu items)
+  const noisePatterns=[
+    /^\[ランキング\]$/,/^\[検索\]$/,/^\[編集\]$/,/^\[履歴\]$/,
+    /^\[ノート\]$/,/^\[評価\]$/,/^\[ランダム\]$/,/^\[閲覧履歴\]$/,
+    /^\[コードブック\]$/,/^移調[:：]/,/^速度[:：]/,/^評価[:：]?$/,
+    /^登録タグ/,/^楽曲情報/,/^YouTube$/,/^\+\d+$/,/^-\d+$/,
+    /^♯表記$/,/^♭表記$/,/^指定なし$/,/^\d+$/,
+  ];
+
+  let headerEnd=-1;
+  for(let i=0;i<lines.length;i++){
+    const t=lines[i].trim();
+    if(!t) continue;
+    // Check if this line is a header end marker
+    if(headerEndPatterns.some(p=>p.test(t))){
+      headerEnd=i;
+      break;
+    }
+  }
+
+  if(headerEnd<0) return raw; // No header detected, return as-is
+
+  // Find the last noise line at or after headerEnd to trim everything up to actual content
+  // Actually: keep from headerEnd onwards
+  return lines.slice(headerEnd).join('\n');
+}
+
 function parsePastedChordSheet(raw, capo){
+  // Strip ChordWiki header noise (everything before 歌：or 作詞 line)
+  raw=stripChordWikiHeader(raw);
+
   // ChordPro format detection: [Em7]歌詞
   const chordProRe=new RegExp('\\[[A-G][^\\]]{0,10}\\]');
   if(chordProRe.test(raw)) return parseChordProText(raw, capo);
@@ -817,6 +858,9 @@ async function doFetchUrl(){
 }
 
 function extractChordDataFromDOM(doc, capo){
+  // Remove ChordWiki navigation/UI elements
+  doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style').forEach(el=>el.remove());
+
   // ChordWiki: try textarea first
   const textarea=doc.querySelector('textarea');
   if(textarea){
