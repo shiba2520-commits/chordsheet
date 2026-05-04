@@ -195,8 +195,6 @@ select option{background:#1a1410}
       <input type="text" id="url-input" placeholder="ChordWikiのURLを貼り付け（例: https://ja.chordwiki.org/wiki/lulu.）" onkeydown="if(event.key==='Enter')doFetchUrl()" style="margin-bottom:6px">
       <button class="btn-ghost" id="url-btn" onclick="doFetchUrl()">🔗 URLから取得</button>
       <button class="btn-ghost" id="paste-btn" onclick="showPasteScreen()" style="margin-top:6px">📋 コピペして登録</button>
-      <button class="btn-ghost" onclick="document.getElementById('img-upload').click()" style="margin-top:6px">📷 スクショから読み取り</button>
-      <input type="file" id="img-upload" accept="image/*" multiple style="display:none">
     </div>
 
     <!-- 登録済み一覧 -->
@@ -217,25 +215,6 @@ select option{background:#1a1410}
       <button class="btn-ghost" onclick="showScreen('search')">キャンセル</button>
     </div>
     <p class="msg error" id="paste-error"></p>
-  </div>
-
-  <!-- IMAGE SCREEN -->
-  <div class="screen" id="screen-image">
-    <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);margin-bottom:6px">スクショから読み取り</h2>
-    <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">U-FRETやChordWikiのスクリーンショットを選択してください。複数枚まとめて選択できます。</p>
-    <div class="igroup">
-      <input type="text" id="img-title" placeholder="曲名（必須）">
-      <input type="text" id="img-artist" placeholder="アーティスト名">
-      <input type="number" id="img-bpm" placeholder="BPM（任意）" min="40" max="240">
-      <input type="number" id="img-capo" placeholder="カポ（任意）" min="0" max="12">
-    </div>
-    <div id="img-count" style="font-size:12px;color:var(--gold);margin-bottom:6px"></div>
-    <div id="img-preview" style="margin:6px 0;display:flex;flex-wrap:wrap;gap:8px"></div>
-    <button class="btn-ghost" onclick="document.getElementById('img-upload2').click()" style="margin-bottom:8px">📷 画像を追加</button>
-    <input type="file" id="img-upload2" accept="image/*" multiple style="display:none">
-    <button class="btn-primary" id="img-read-btn" onclick="readImagesWithGemini()">🔍 Geminiで読み取る</button>
-    <button class="btn-ghost" onclick="showScreen('search');clearImages()" style="margin-top:6px">キャンセル</button>
-    <p class="msg error" id="img-error" style="margin-top:8px"></p>
   </div>
 
   <!-- CONFIRM -->
@@ -361,17 +340,12 @@ document.getElementById('model-select').value=model;
     document.getElementById('api-key-input').value=apiKey;
     showScreen('search');
   }
-  // Image upload event listeners
-  const u1=document.getElementById('img-upload');
-  const u2=document.getElementById('img-upload2');
-  if(u1) u1.addEventListener('change', function(e){ handleImageUpload(e); });
-  if(u2) u2.addEventListener('change', function(e){ addMoreImages(e); });
+
 })();
 
 // ── Screen ────────────────────────────────────────────
 function showScreen(n){
   if(n==='search') setTimeout(()=>{ try{ renderLibraryList(); }catch{} }, 0);
-  if(n==='image') setTimeout(()=>{ const t=document.getElementById('img-title');if(t&&!t.value)t.focus(); },100);
 
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const scr=document.getElementById('screen-'+n);
@@ -700,206 +674,7 @@ function parseChordProText(raw, capo){
 
 
 
-// ── Image-based chord reading ──────────────────────────
-let uploadedImages = [];
 
-function clearImages(){
-  uploadedImages = [];
-  const preview = document.getElementById('img-preview');
-  if(preview) preview.innerHTML = '';
-}
-
-function handleImageUpload(event){
-  if(!event.target.files||event.target.files.length===0) return;
-  clearImages();
-  document.getElementById('img-title').value='';
-  document.getElementById('img-artist').value='';
-  document.getElementById('img-bpm').value='';
-  document.getElementById('img-capo').value='';
-  document.getElementById('img-error').textContent='';
-  showScreen('image');
-  addImagesToList(event.target.files);
-  // Reset input so same file can be selected again
-  event.target.value='';
-}
-
-function addMoreImages(event){
-  addImagesToList(event.files);
-}
-
-function addImagesToList(files){
-  const preview=document.getElementById('img-preview');
-  if(!preview) return;
-  Array.from(files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const data=e.target.result;
-      uploadedImages.push({name:file.name,dataUrl:data});
-      const img=document.createElement('img');
-      img.src=data;
-      img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--gold-faint)';
-      preview.appendChild(img);
-      // Update count display
-      const countEl=document.getElementById('img-count');
-      if(countEl) countEl.textContent=uploadedImages.length+'枚選択済み';
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-async function readImagesWithGemini(){
-  const title=document.getElementById('img-title').value.trim();
-  const artist=document.getElementById('img-artist').value.trim();
-  const bpm=parseInt(document.getElementById('img-bpm').value)||null;
-  const capo=parseInt(document.getElementById('img-capo').value)||0;
-  const err=document.getElementById('img-error');
-  err.textContent='';
-
-  if(!title){ err.textContent='曲名を入力してください'; return; }
-  if(uploadedImages.length===0){ err.textContent='画像を選択してください'; return; }
-
-  const currentApiKey=lsGet('cs_key');
-  const currentModel=lsGet('cs_model','gemini-3-flash-preview');
-  if(!currentApiKey){
-    err.textContent='APIキーが設定されていません。設定から入力してください。';
-    return;
-  }
-
-  const btn=document.getElementById('img-read-btn');
-  btn.disabled=true;
-  document.getElementById('loading-text').textContent='Geminiで画像を解析中...';
-  showScreen('loading');
-
-  async function callVision(imgs, promptText){
-    const parts=[
-      ...imgs.map(img=>({
-        inline_data:{
-          mime_type:img.dataUrl.match(/data:([^;]+);/)[1],
-          data:img.dataUrl.split(',')[1]
-        }
-      })),
-      {text:promptText}
-    ];
-    const res=await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts}],
-          generationConfig:{maxOutputTokens:8192,temperature:0}
-        }),
-        signal:AbortSignal.timeout(90000)
-      }
-    );
-    const j=await res.json();
-    if(!res.ok) throw new Error(j.error?.message||'API Error '+res.status);
-    const text=j.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const cleaned=text.replace(/```json/g,'').replace(/```/g,'').trim();
-    let data=null;
-    try{data=JSON.parse(cleaned);}catch{}
-    if(!data){const s=cleaned.indexOf('{'),e=cleaned.lastIndexOf('}');if(s!==-1&&e>s)try{data=JSON.parse(cleaned.slice(s,e+1));}catch{}}
-    return data;
-  }
-
-  const basePrompt='ギターコード譜のスクリーンショットです。画像に書かれた内容を1行も漏らさず全て読み取り、以下のJSON形式のみで返してください（説明文不要）:\n'
-    +'{"sections":[{"label":"セクション名","lines":[{"chords":"Em7  G/B  D","lyric":"歌詞テキスト"},{"chords":"","lyric":"歌詞のみの行"},{"chords":"Am  F  C","lyric":""}]}]}\n'
-    +'【必須】\n'
-    +'・画像の文字を1行も省略せず正確に転記する（推測・補完禁止）\n'
-    +'・コードは chords に、歌詞は lyric に分ける（混在禁止）\n'
-    +'・コードのみ行は lyric=""、歌詞のみ行は chords=""\n'
-    +'・セクション名（イントロ・Aメロ・Bメロ・サビ・ブリッジ等）をlabelに\n'
-    +'・コードは2スペース区切り（例:"Em7  G/B  CM9  G"）\n'
-    +'・歌詞は画像に見える文字を全て転記';
-
-  try{
-    const BATCH=3;
-    const allSections=[];
-    const total=uploadedImages.length;
-
-    for(let i=0;i<total;i+=BATCH){
-      // Overlap: include 1 image from previous batch (except first)
-      const from=i===0?0:Math.max(0,i-1);
-      const to=Math.min(i+BATCH,total);
-      const batch=uploadedImages.slice(from,to);
-      const pageInfo=i===0?'1〜'+to+'ページ目':(from+1)+'〜'+to+'ページ目（'+from+'ページ目は前バッチと重複）';
-
-      document.getElementById('loading-sub').textContent=
-        (Math.floor(i/BATCH)+1)+'/'+Math.ceil(total/BATCH)+' バッチ処理中（'+pageInfo+'）';
-
-      const prompt=basePrompt+'\n【このバッチ情報】全'+total+'枚中 '+pageInfo;
-      const data=await callVision(batch, prompt);
-
-      if(data&&data.sections){
-        // If overlapping with previous, skip the first section to avoid duplicates
-        const secs=i===0?data.sections:data.sections.slice(1);
-        for(const sec of secs){
-          const last=allSections[allSections.length-1];
-          if(last&&last.label===sec.label){
-            // Merge lines into existing section
-            last.lines.push(...sec.lines);
-          } else {
-            allSections.push({label:sec.label,lines:[...sec.lines]});
-          }
-        }
-      }
-
-      if(i+BATCH<total) await new Promise(r=>setTimeout(r,800));
-    }
-
-    if(allSections.length===0){
-      err.textContent='読み取りに失敗しました。';
-      btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
-      showScreen('image');return;
-    }
-
-    // Final verification pass: check for obvious missing sections
-    document.getElementById('loading-sub').textContent='最終確認中...';
-    const totalLines=allSections.reduce((a,s)=>a+s.lines.length,0);
-    // If very few lines (likely missed a lot), do a full re-read of all images
-    if(totalLines<10&&uploadedImages.length>2){
-      const fullData=await callVision(
-        uploadedImages.slice(0,Math.min(6,uploadedImages.length)),
-        basePrompt+'\n【重要】全曲を読み取ること。省略禁止。'
-      );
-      if(fullData&&fullData.sections&&fullData.sections.length>allSections.length){
-        allSections.length=0;
-        allSections.push(...fullData.sections);
-      }
-    }
-
-    const chordData={capo:capo,sections:allSections};
-    const id='song_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-    const newSong={id,addedAt:Date.now(),songInfo:{title,artist:artist||'',bpm:bpm||120},chordData};
-
-    let lib=loadLibrary();
-    const existing=findInLibrary(title,artist);
-    if(existing){
-      if(!confirm('「'+title+'」は既に登録済みです。上書きしますか？')){
-        btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
-        showScreen('image');return;
-      }
-      lib=lib.filter(s=>s.id!==existing.id);
-    }
-    lib.push(newSong);
-    saveLibrary(lib);
-
-    songInfo=newSong.songInfo;
-    baseSpeed=bpmSpd(bpm||120);
-    currentChordData=chordData;
-    currentSources={sources:[{uri:'画像読み取り',title:'Gemini Vision'}],searchQueries:[]};
-    isViewingFavorite=false;
-    renderDisplay(chordData,currentSources);
-    showScreen('display');
-    clearImages();
-    const lineCount=allSections.reduce((a,s)=>a+s.lines.length,0);
-    showToast('✓ '+allSections.length+'セクション '+lineCount+'行を読み取りました');
-  }catch(e){
-    err.textContent='エラー: '+e.message;
-    btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
-    showScreen('image');
-  }
-}
 
 async function doSearch(){
   const raw=document.getElementById('search-input').value.trim();
@@ -956,7 +731,6 @@ async function doFetchUrl(){
   if(!url.includes('chordwiki.org')){
     document.getElementById('search-error').textContent='ChordWikiのURLを入力してください（例: https://ja.chordwiki.org/wiki/lulu.）'; return;
   }
-  const isUfret=false;
   const btn=document.getElementById('url-btn');
   btn.disabled=true; btn.textContent='取得中...';
   document.getElementById('search-error').textContent='';
@@ -1011,7 +785,7 @@ async function doFetchUrl(){
     const bpmMatch=bodyText.match(/BPM[：: ]*([0-9]+)/i);
     if(bpmMatch) bpm=parseInt(bpmMatch[1]);
 
-    const chordData=extractChordDataFromDOM(doc, capo, isUfret);
+    const chordData=extractChordDataFromDOM(doc, capo);
 
     if(!chordData||!chordData.sections||chordData.sections.length===0){
       document.getElementById('search-error').innerHTML=
@@ -1042,9 +816,7 @@ async function doFetchUrl(){
   }finally{ btn.disabled=false; btn.textContent='🔗 URLから取得'; }
 }
 
-function extractChordDataFromDOM(doc, capo, isUfret){
-  if(isUfret) return extractUfretDOM(doc, capo);
-
+function extractChordDataFromDOM(doc, capo){
   // ChordWiki: try textarea first
   const textarea=doc.querySelector('textarea');
   if(textarea){
