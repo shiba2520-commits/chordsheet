@@ -745,7 +745,7 @@ async function doSearch(){
     +'<span style="color:var(--text-dim);font-size:11px;display:block;margin-top:6px">下の「📋 ChordWikiからコピペして登録」から追加してください。</span>'
     +'<div style="margin-top:10px;font-size:12px">'
       +'<a href="https://ja.chordwiki.org/search.html?q='+q+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a>'
-      +'　<a href="https://www.ufret.jp/search.php?key='+q+'" target="_blank" style="color:var(--gold)">→ U-FRETで検索 ↗</a>'
+      +'</div>'
     +'</div>';
 }
 
@@ -797,16 +797,6 @@ async function doFetchUrl(){
 
     document.getElementById('loading-sub').textContent='コード譜を解析中...';
     const doc=new DOMParser().parseFromString(html,'text/html');
-
-    // DEBUG: show class names found in HTML for U-FRET analysis
-    if(isUfret){
-      const allEls=[...doc.querySelectorAll('[class]')];
-      const classes=new Set();
-      allEls.forEach(el=>(el.className||'').split(' ').forEach(c=>c&&classes.add(c)));
-      console.log('U-FRET classes:', [...classes].join(', '));
-      // Also show first 2000 chars of body
-      console.log('U-FRET body preview:', (doc.body.innerHTML||'').slice(0,3000));
-    }
 
     const titleFromUrl=decodeURIComponent((url.split('/wiki/').pop()||'').replace(/[?#].*$/u,'')).trim();
     const bodyText=doc.body.textContent||'';
@@ -1000,7 +990,7 @@ async function doConfirm(){
         +'・カポ情報があれば capo に整数で（なければ0）';
     } else {
       prompt='「'+songInfo.title+'」'+(songInfo.artist?' '+songInfo.artist:'')
-        +'のギターコード譜を ja.chordwiki.org または www.ufret.jp で検索し、'
+        +'のギターコード譜を ja.chordwiki.org で検索し、'
         +'見つかったページの内容を忠実にJSON化してください。\n\n'
         +'出力形式（マークダウン不要、JSONのみ）:\n'
         +'{"capo":0,"sections":[{"label":"イントロ","lines":[{"chords":"Em7  G/B","lyric":""},{"chords":"Em7","lyric":"歌詞"}]}]}\n\n'
@@ -1023,13 +1013,13 @@ async function doConfirm(){
       document.getElementById('confirm-error').innerHTML=
         '⚠ コード譜を取得できませんでした。'
         +'<br><a href="https://ja.chordwiki.org/search.html?q='+q2+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a>'
-        +'&nbsp;&nbsp;<a href="https://www.ufret.jp/search.php?key='+q2+'" target="_blank" style="color:var(--gold)">→ U-FRETで検索 ↗</a>';
+        +'';
       showScreen('confirm');return;
     }
 
     currentChordData={capo:data.capo||0, sections:data.sections};
     const sourceUri=targetUrl||(result.sources&&result.sources[0]&&result.sources[0].uri)||'';
-    currentSources={sources:[{uri:sourceUri,title:sourceUri.includes('chordwiki')?'ChordWiki':sourceUri.includes('ufret')?'U-FRET':'検索結果'}],searchQueries:[]};
+    currentSources={sources:[{uri:sourceUri,title:sourceUri.includes('chordwiki')?'ChordWiki':'参照元'}],searchQueries:[]};
     isViewingFavorite=false;
     renderDisplay(currentChordData,currentSources);
     showScreen('display');
@@ -1104,12 +1094,11 @@ function renderDisplay(data, result, isSaved=false){
     const searchQueries=result.searchQueries||[];
     if(sources.length>0){
       const primary=sources[0];
-      const isUfret=primary.uri&&primary.uri.includes('ufret');
       const hostname=(()=>{try{return new URL(primary.uri).hostname.replace('www.','')}catch{return primary.uri||'不明'}})();
-      const siteLabel=isUfret?'U-FRET':(primary.title?primary.title.split(/[\|\-]/)[0].trim().slice(0,20):hostname);
+      const siteLabel=(primary.title?primary.title.split(/[\|\-]/)[0].trim().slice(0,20):hostname);
       let html='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
       html+='<span style="color:var(--text-dim)">コード出典:</span>';
-      html+='<a href="'+primary.uri+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:'+(isUfret?'#c8a96e22':'#ffffff0a')+';border:1px solid '+(isUfret?'#c8a96e55':'#ffffff20')+';color:'+(isUfret?'var(--gold)':'var(--text)')+';font-family:Space Mono,monospace;font-size:11px;padding:4px 12px;border-radius:20px;text-decoration:none;font-weight:700">'+(isUfret?'✓ ':'')+siteLabel+' <span style="opacity:.5">↗</span></a>';
+      html+='<a href="'+primary.uri+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#c8a96e22;border:1px solid #c8a96e55;color:var(--gold);font-family:Space Mono,monospace;font-size:11px;padding:3px 10px;border-radius:20px;text-decoration:none;font-weight:700">✓ '+siteLabel+' <span style="opacity:.5">↗</span></a>';
       if(sources.length>1){
         html+='<span style="color:var(--text-dim)">+</span>';
         html+=sources.slice(1,3).map(s=>{const h=(()=>{try{return new URL(s.uri).hostname.replace('www.','')}catch{return s.uri}})();return '<a href="'+s.uri+'" target="_blank" style="color:var(--text-dim);font-size:11px;text-decoration:underline">'+h+'</a>';}).join(', ');
@@ -1118,10 +1107,10 @@ function renderDisplay(data, result, isSaved=false){
       srcDiv.innerHTML=html;srcDiv.style.display='';
     }else if(searchQueries.length>0){
       const q=searchQueries[0];
-      srcDiv.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="color:var(--text-dim)">⚠ 参照元URL不明 — 検索クエリ:</span><a href="https://www.google.com/search?q='+encodeURIComponent(q)+'" target="_blank" style="color:var(--gold);font-size:11px;text-decoration:underline">'+q+' ↗</a><a href="https://ufret.jp/search.php?keyword='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold);font-size:10px;border:1px solid var(--gold-dim);padding:3px 8px;border-radius:12px;text-decoration:none">U-FRETで確認 ↗</a></div>';
+      srcDiv.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="color:var(--text-dim)">⚠ 参照元URL不明 — 検索クエリ:</span><a href="https://www.google.com/search?q='+encodeURIComponent(q)+'" target="_blank" style="color:var(--gold);font-size:11px;text-decoration:underline">'+q+' ↗</a><a href="https://ja.chordwiki.org/search.html?q='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold);font-size:10px;border:1px solid var(--gold-dim);padding:3px 8px;border-radius:12px;text-decoration:none">ChordWikiで確認 ↗</a></div>';
       srcDiv.style.display='';
     }else{
-      srcDiv.innerHTML='<span style="color:var(--text-dim);font-size:11px">⚠ 参照元不明 — <a href="https://ufret.jp/search.php?keyword='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold)">U-FRETで確認 ↗</a></span>';
+      srcDiv.innerHTML='<span style="color:var(--text-dim);font-size:11px">⚠ 参照元不明 — <a href="https://ja.chordwiki.org/search.html?q='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold)">ChordWikiで確認 ↗</a></span>';
       srcDiv.style.display='';
     }
   }else if(isSaved){
