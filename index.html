@@ -761,7 +761,7 @@ async function readImagesWithGemini(){
   const currentApiKey=lsGet('cs_key');
   const currentModel=lsGet('cs_model','gemini-3-flash-preview');
   if(!currentApiKey){
-    err.textContent='APIキーが設定されていません。右上の設定から入力してください。';
+    err.textContent='APIキーが設定されていません。設定から入力してください。';
     return;
   }
 
@@ -770,144 +770,108 @@ async function readImagesWithGemini(){
   document.getElementById('loading-text').textContent='Geminiで画像を解析中...';
   showScreen('loading');
 
-  try{
-    // Split images into batches of 4
-    const BATCH=4;
-    const batches=[];
-    for(let i=0;i<uploadedImages.length;i+=BATCH){
-      batches.push(uploadedImages.slice(i,i+BATCH));
-    }
-
-    const allSections=[];
-    for(let bi=0;bi<batches.length;bi++){
-      const batch=batches[bi];
-      document.getElementById('loading-sub').textContent=
-        'バッチ '+(bi+1)+'/'+batches.length+' を処理中（'+batch.length+'枚）...';
-
-      const isFirst=bi===0;
-      const isLast=bi===batches.length-1;
-
-      const prompt='これはギターコード譜のスクリーンショット（'+batch.length+'枚）です。'
-        +(batches.length>1?'曲全体のうち'+(bi*BATCH+1)+'〜'+Math.min((bi+1)*BATCH,uploadedImages.length)+'ページ目です。':'')
-        +'\n\n以下のJSON形式のみで返してください（マークダウン・説明文不要）:\n'
-        +'{"sections":[{"label":"セクション名","lines":[{"chords":"Em7  G/B  CM9","lyric":"歌詞の行"},{"chords":"","lyric":"歌詞のみの行"},{"chords":"G  D","lyric":""}]}]}\n\n'
-        +'【必須ルール】\n'
-        +'・画像に書かれた内容を1行も漏らさず全て転記する\n'
-        +'・コードは chords に、歌詞は lyric に必ず分ける（混在禁止）\n'
-        +'・コードのみ行（イントロ等）は lyric を空文字列\n'
-        +'・歌詞のみ行は chords を空文字列\n'
-        +'・セクション名（イントロ・Aメロ・Bメロ・サビ・ブリッジ等）を label に入れる\n'
-        +'・コードは複数ある場合スペース2つで区切る（例: "Em7  G/B  D"）\n'
-        +'・歌詞は画像の文字を正確に転記（推測・省略禁止）';
-
-      const parts=[
-        ...batch.map(img=>({
-          inline_data:{
-            mime_type:img.dataUrl.match(/data:([^;]+);/)[1],
-            data:img.dataUrl.split(',')[1]
-          }
-        })),
-        {text:prompt}
-      ];
-
-      const res=await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,
-        {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            contents:[{parts}],
-            generationConfig:{maxOutputTokens:8192,temperature:0.1}
-          }),
-          signal:AbortSignal.timeout(90000)
+  async function callVision(imgs, promptText){
+    const parts=[
+      ...imgs.map(img=>({
+        inline_data:{
+          mime_type:img.dataUrl.match(/data:([^;]+);/)[1],
+          data:img.dataUrl.split(',')[1]
         }
-      );
-
-      const resJson=await res.json();
-      if(!res.ok) throw new Error(resJson.error?.message||'API Error '+res.status);
-      const text=resJson.candidates?.[0]?.content?.parts?.[0]?.text||'';
-      const cleaned=text.replace(/```json/g,'').replace(/```/g,'').trim();
-
-      let data=null;
-      try{data=JSON.parse(cleaned);}catch{}
-      if(!data){
-        const s=cleaned.indexOf('{'),e=cleaned.lastIndexOf('}');
-        if(s!==-1&&e>s)try{data=JSON.parse(cleaned.slice(s,e+1));}catch{}
+      })),
+      {text:promptText}
+    ];
+    const res=await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts}],
+          generationConfig:{maxOutputTokens:8192,temperature:0}
+        }),
+        signal:AbortSignal.timeout(90000)
       }
+    );
+    const j=await res.json();
+    if(!res.ok) throw new Error(j.error?.message||'API Error '+res.status);
+    const text=j.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const cleaned=text.replace(/```json/g,'').replace(/```/g,'').trim();
+    let data=null;
+    try{data=JSON.parse(cleaned);}catch{}
+    if(!data){const s=cleaned.indexOf('{'),e=cleaned.lastIndexOf('}');if(s!==-1&&e>s)try{data=JSON.parse(cleaned.slice(s,e+1));}catch{}}
+    return data;
+  }
+
+  const basePrompt='ギターコード譜のスクリーンショットです。画像に書かれた内容を1行も漏らさず全て読み取り、以下のJSON形式のみで返してください（説明文不要）:\n'
+    +'{"sections":[{"label":"セクション名","lines":[{"chords":"Em7  G/B  D","lyric":"歌詞テキスト"},{"chords":"","lyric":"歌詞のみの行"},{"chords":"Am  F  C","lyric":""}]}]}\n'
+    +'【必須】\n'
+    +'・画像の文字を1行も省略せず正確に転記する（推測・補完禁止）\n'
+    +'・コードは chords に、歌詞は lyric に分ける（混在禁止）\n'
+    +'・コードのみ行は lyric=""、歌詞のみ行は chords=""\n'
+    +'・セクション名（イントロ・Aメロ・Bメロ・サビ・ブリッジ等）をlabelに\n'
+    +'・コードは2スペース区切り（例:"Em7  G/B  CM9  G"）\n'
+    +'・歌詞は画像に見える文字を全て転記';
+
+  try{
+    const BATCH=3;
+    const allSections=[];
+    const total=uploadedImages.length;
+
+    for(let i=0;i<total;i+=BATCH){
+      // Overlap: include 1 image from previous batch (except first)
+      const from=i===0?0:Math.max(0,i-1);
+      const to=Math.min(i+BATCH,total);
+      const batch=uploadedImages.slice(from,to);
+      const pageInfo=i===0?'1〜'+to+'ページ目':(from+1)+'〜'+to+'ページ目（'+from+'ページ目は前バッチと重複）';
+
+      document.getElementById('loading-sub').textContent=
+        (Math.floor(i/BATCH)+1)+'/'+Math.ceil(total/BATCH)+' バッチ処理中（'+pageInfo+'）';
+
+      const prompt=basePrompt+'\n【このバッチ情報】全'+total+'枚中 '+pageInfo;
+      const data=await callVision(batch, prompt);
 
       if(data&&data.sections){
-        allSections.push(...data.sections);
-      } else {
-        console.warn('Batch',bi,'parse failed. text preview:',text.slice(0,200));
-        // Try to extract any sections array
-        const secIdx=cleaned.indexOf('"sections"');
-        if(secIdx>=0) console.warn('sections found at',secIdx,'but parse failed');
+        // If overlapping with previous, skip the first section to avoid duplicates
+        const secs=i===0?data.sections:data.sections.slice(1);
+        for(const sec of secs){
+          const last=allSections[allSections.length-1];
+          if(last&&last.label===sec.label){
+            // Merge lines into existing section
+            last.lines.push(...sec.lines);
+          } else {
+            allSections.push({label:sec.label,lines:[...sec.lines]});
+          }
+        }
       }
 
-      // Small delay between batches
-      if(bi<batches.length-1) await new Promise(r=>setTimeout(r,500));
+      if(i+BATCH<total) await new Promise(r=>setTimeout(r,800));
     }
 
     if(allSections.length===0){
-      // Re-try with single batch if multiple batches all failed
-      document.getElementById('loading-sub').textContent='再試行中（一括処理）...';
-      try{
-        const allParts=[
-          ...uploadedImages.slice(0,6).map(img=>({
-            inline_data:{
-              mime_type:img.dataUrl.match(/data:([^;]+);/)[1],
-              data:img.dataUrl.split(',')[1]
-            }
-          })),
-          {text:'このギターコード譜画像を読み取り、JSONのみ返してください。セクション・コード・歌詞を全て含むJSONのみ:{"sections":[{"label":"セクション名","lines":[{"chords":"Em7  G","lyric":"歌詞"}]}]}　全行転記・コードと歌詞を分ける'}
+      err.textContent='読み取りに失敗しました。';
+      btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
+      showScreen('image');return;
+    }
 
-
-        ];
-        const r2=await fetch(
-          'https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,
-          {method:'POST',headers:{'Content-Type':'application/json'},
-           body:JSON.stringify({contents:[{parts:allParts}],generationConfig:{maxOutputTokens:4096,temperature:0}}),
-           signal:AbortSignal.timeout(60000)}
-        );
-        const j2=await r2.json();
-        const t2=j2.candidates?.[0]?.content?.parts?.[0]?.text||'';
-        const c2=t2.replace(/```json/g,'').replace(/```/g,'').trim();
-        let d2=null;
-        try{d2=JSON.parse(c2);}catch{}
-        if(!d2){const s=c2.indexOf('{'),e=c2.lastIndexOf('}');if(s!==-1&&e>s)try{d2=JSON.parse(c2.slice(s,e+1));}catch{}}
-        if(d2&&d2.sections&&d2.sections.length>0){
-          allSections.push(...d2.sections);
-        } else {
-          // Show actual response for debugging
-          document.getElementById('img-error').textContent='読み取り失敗。APIレスポンス: '+t2.slice(0,100);
-          btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
-          showScreen('image');return;
-        }
-      }catch(e2){
-        document.getElementById('img-error').textContent='読み取り失敗: '+e2.message;
-        btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
-        showScreen('image');return;
+    // Final verification pass: check for obvious missing sections
+    document.getElementById('loading-sub').textContent='最終確認中...';
+    const totalLines=allSections.reduce((a,s)=>a+s.lines.length,0);
+    // If very few lines (likely missed a lot), do a full re-read of all images
+    if(totalLines<10&&uploadedImages.length>2){
+      const fullData=await callVision(
+        uploadedImages.slice(0,Math.min(6,uploadedImages.length)),
+        basePrompt+'\n【重要】全曲を読み取ること。省略禁止。'
+      );
+      if(fullData&&fullData.sections&&fullData.sections.length>allSections.length){
+        allSections.length=0;
+        allSections.push(...fullData.sections);
       }
     }
 
-    // Merge duplicate consecutive section labels
-    const merged=[];
-    for(const sec of allSections){
-      const last=merged[merged.length-1];
-      if(last&&last.label===sec.label){
-        last.lines.push(...sec.lines);
-      } else {
-        merged.push({label:sec.label,lines:[...sec.lines]});
-      }
-    }
-
-    const chordData={capo:capo,sections:merged};
+    const chordData={capo:capo,sections:allSections};
     const id='song_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-    const newSong={
-      id,addedAt:Date.now(),
-      songInfo:{title,artist:artist||'',bpm:bpm||120},
-      chordData
-    };
+    const newSong={id,addedAt:Date.now(),songInfo:{title,artist:artist||'',bpm:bpm||120},chordData};
+
     let lib=loadLibrary();
     const existing=findInLibrary(title,artist);
     if(existing){
@@ -928,9 +892,10 @@ async function readImagesWithGemini(){
     renderDisplay(chordData,currentSources);
     showScreen('display');
     clearImages();
-    showToast('✓ '+merged.length+'セクション・'+allSections.reduce((a,s)=>a+s.lines.length,0)+'行を読み取りました');
+    const lineCount=allSections.reduce((a,s)=>a+s.lines.length,0);
+    showToast('✓ '+allSections.length+'セクション '+lineCount+'行を読み取りました');
   }catch(e){
-    document.getElementById('img-error').textContent='エラー: '+e.message;
+    err.textContent='エラー: '+e.message;
     btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
     showScreen('image');
   }
