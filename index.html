@@ -837,6 +837,11 @@ async function readImagesWithGemini(){
 
       if(data&&data.sections){
         allSections.push(...data.sections);
+      } else {
+        console.warn('Batch',bi,'parse failed. text preview:',text.slice(0,200));
+        // Try to extract any sections array
+        const secIdx=cleaned.indexOf('"sections"');
+        if(secIdx>=0) console.warn('sections found at',secIdx,'but parse failed');
       }
 
       // Small delay between batches
@@ -844,10 +849,45 @@ async function readImagesWithGemini(){
     }
 
     if(allSections.length===0){
-      document.getElementById('img-error').textContent='読み取りに失敗しました。画像をより鮮明にして再試行してください。';
-      btn.disabled=false; btn.textContent='🔍 Geminiで読み取る';
-      showScreen('image');
-      return;
+      // Re-try with single batch if multiple batches all failed
+      document.getElementById('loading-sub').textContent='再試行中（一括処理）...';
+      try{
+        const allParts=[
+          ...uploadedImages.slice(0,6).map(img=>({
+            inline_data:{
+              mime_type:img.dataUrl.match(/data:([^;]+);/)[1],
+              data:img.dataUrl.split(',')[1]
+            }
+          })),
+          {text:'このギターコード譜画像を読み取り、JSONのみ返してください。セクション・コード・歌詞を全て含むJSONのみ:{"sections":[{"label":"セクション名","lines":[{"chords":"Em7  G","lyric":"歌詞"}]}]}　全行転記・コードと歌詞を分ける'}
+
+
+        ];
+        const r2=await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,
+          {method:'POST',headers:{'Content-Type':'application/json'},
+           body:JSON.stringify({contents:[{parts:allParts}],generationConfig:{maxOutputTokens:4096,temperature:0}}),
+           signal:AbortSignal.timeout(60000)}
+        );
+        const j2=await r2.json();
+        const t2=j2.candidates?.[0]?.content?.parts?.[0]?.text||'';
+        const c2=t2.replace(/```json/g,'').replace(/```/g,'').trim();
+        let d2=null;
+        try{d2=JSON.parse(c2);}catch{}
+        if(!d2){const s=c2.indexOf('{'),e=c2.lastIndexOf('}');if(s!==-1&&e>s)try{d2=JSON.parse(c2.slice(s,e+1));}catch{}}
+        if(d2&&d2.sections&&d2.sections.length>0){
+          allSections.push(...d2.sections);
+        } else {
+          // Show actual response for debugging
+          document.getElementById('img-error').textContent='読み取り失敗。APIレスポンス: '+t2.slice(0,100);
+          btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
+          showScreen('image');return;
+        }
+      }catch(e2){
+        document.getElementById('img-error').textContent='読み取り失敗: '+e2.message;
+        btn.disabled=false;btn.textContent='🔍 Geminiで読み取る';
+        showScreen('image');return;
+      }
     }
 
     // Merge duplicate consecutive section labels
