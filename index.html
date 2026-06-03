@@ -265,6 +265,18 @@ select option{background:#1a1410}
         <div class="bpm-tag" id="disp-bpm"></div>
         <div class="capo-tag" id="disp-capo"></div>
       </div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text-dim);font-family:'Space Mono',monospace">キー</span>
+        <div id="key-btns" style="display:flex;gap:4px">
+          <button class="key-btn active" data-shift="0" onclick="setKeyShift(0)">0</button>
+          <button class="key-btn" data-shift="-1" onclick="setKeyShift(-1)">-1</button>
+          <button class="key-btn" data-shift="-2" onclick="setKeyShift(-2)">-2</button>
+          <button class="key-btn" data-shift="-3" onclick="setKeyShift(-3)">-3</button>
+          <button class="key-btn" data-shift="-4" onclick="setKeyShift(-4)">-4</button>
+          <button class="key-btn" data-shift="-5" onclick="setKeyShift(-5)">-5</button>
+        </div>
+        <span id="key-capo-hint" style="font-size:11px;color:var(--gold);font-family:'Space Mono',monospace"></span>
+      </div>
     </div>
     <div class="controls">
       <div class="speed-group">
@@ -717,6 +729,73 @@ function parseChordProText(raw, capo){
 
 
 
+// ── Key transposition ────────────────────────────────
+const NOTES_S=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTES_F=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+function noteIdx(n){
+  let i=NOTES_S.indexOf(n);
+  if(i>=0)return i;
+  return NOTES_F.indexOf(n);
+}
+function shiftNote(n,s){
+  const i=noteIdx(n);
+  if(i<0)return n;
+  const ni=((i+s)%12+12)%12;
+  // Prefer flats when going down
+  return s<0?NOTES_F[ni]:NOTES_S[ni];
+}
+function transposeChord(chord,s){
+  if(!chord||s===0)return chord;
+  chord=chord.trim();
+  if(!chord)return chord;
+  // Match: root [quality] [/bass]
+  const m=chord.match(/^([A-G][#b]?)((?:m|M|maj|min|sus|aug|dim|add|[0-9]|\(|\))*)((?:\/[A-G][#b]?)?)$/);
+  if(!m)return chord;
+  const newRoot=shiftNote(m[1],s);
+  const newBass=m[3]?'/'+shiftNote(m[3].slice(1),s):'';
+  return newRoot+m[2]+newBass;
+}
+
+let currentKeyShift=0;
+
+function setKeyShift(shift){
+  currentKeyShift=shift;
+  // Update button states
+  document.querySelectorAll('.key-btn').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.shift)===shift);
+  });
+  // Calculate capo and chord shift
+  const origCapo=currentChordData?currentChordData.capo||0:0;
+  const rawCapo=origCapo+shift;
+  const newCapo=Math.max(0,rawCapo);
+  const chordShift=rawCapo-newCapo; // 0 or negative
+  // Show hint
+  const hint=document.getElementById('key-capo-hint');
+  if(hint){
+    if(shift===0){hint.textContent='';}
+    else if(chordShift===0){hint.textContent='カポ '+newCapo+' (元: '+origCapo+')';}
+    else{hint.textContent='カポ '+newCapo+' + コード'+chordShift+'半音';}
+  }
+  // Re-render with transposed chords
+  if(currentChordData) renderTransposed(currentChordData, newCapo, chordShift);
+}
+
+function renderTransposed(data, newCapo, chordShift){
+  // Build a transposed copy of chordData
+  const transposed={
+    capo:newCapo,
+    sections:data.sections.map(sec=>({
+      label:sec.label,
+      lines:sec.lines.map(line=>({
+        chords:line.chords?line.chords.split(/\s{2,}|\s+/).map(c=>transposeChord(c,chordShift)).join('  '):'',
+        lyric:line.lyric||''
+      }))
+    }))
+  };
+  renderDisplay(transposed, currentSources, false, true);
+}
+
 async function doSearch(){
   const raw=document.getElementById('search-input').value.trim();
   if(!raw)return;
@@ -1067,11 +1146,16 @@ async function doReroll(){
 }
 
 // ── Render ────────────────────────────────────────────
-function renderDisplay(data, result, isSaved=false){
+function renderDisplay(data, result, isSaved=false, skipKeyReset=false){
   // Song info
   document.getElementById('disp-title').textContent=songInfo.title;
   document.getElementById('disp-artist').textContent=songInfo.artist;
   document.getElementById('disp-bpm').textContent=songInfo.bpm?'♩ '+songInfo.bpm+' BPM':'';
+  if(!skipKeyReset){
+    currentKeyShift=0;
+    document.querySelectorAll('.key-btn').forEach(b=>b.classList.toggle('active',b.dataset.shift==='0'));
+    const kh=document.getElementById('key-capo-hint');if(kh)kh.textContent='';
+  }
   const capoEl=document.getElementById('disp-capo');
   if(capoEl){
     if(data.capo&&data.capo>0){capoEl.textContent='🎸 Capo '+data.capo;capoEl.style.display='inline-block';}
