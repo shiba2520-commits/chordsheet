@@ -52,6 +52,7 @@ select option{background:#1a1410}
 .loading-sub{color:var(--text-dim);font-size:12px;margin-top:7px}
 .msg{font-size:12px;margin-top:10px;text-align:center;line-height:1.5;min-height:18px}
 .error{color:var(--red)}
+/* ── Display screen ── */
 #screen-display{padding:0;align-items:stretch;justify-content:flex-start}
 .song-header{padding:14px 24px 10px;border-bottom:1px solid #c8a96e12;flex-shrink:0}
 .song-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
@@ -79,6 +80,7 @@ select option{background:#1a1410}
 .chord-line{font-family:'Space Mono',monospace;color:var(--gold);font-size:13px;letter-spacing:.08em;min-height:18px;white-space:pre}
 .lyric-line{font-size:16px;line-height:1.6;letter-spacing:.04em}
 .lyrics-end{height:80px}
+/* ── Favorites screen ── */
 #screen-favorites{padding:0;align-items:stretch;justify-content:flex-start}
 .fav-header{padding:16px 24px;border-bottom:1px solid var(--gold-faint);flex-shrink:0;display:flex;align-items:center;gap:12px}
 .fav-title-text{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex:1}
@@ -94,7 +96,9 @@ select option{background:#1a1410}
 .fav-delete:hover{color:var(--red);background:#e8806011}
 .fav-share{background:none;border:1px solid #c8a96e33;color:var(--gold);font-family:'Space Mono',monospace;font-size:10px;padding:4px 8px;border-radius:12px;cursor:pointer;transition:all .2s;flex-shrink:0;white-space:nowrap}
 .fav-share:hover{background:#c8a96e11}
+/* ── Shared view banner ── */
 .shared-banner{background:#4a2e6e33;border-bottom:1px solid #9b6fd433;padding:8px 24px;flex-shrink:0;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--purple);font-family:'Space Mono',monospace}
+/* ── Toast ── */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1410;border:1px solid #c8a96e44;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;padding:10px 20px;border-radius:8px;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 ::-webkit-scrollbar{width:4px}
@@ -145,6 +149,7 @@ select option{background:#1a1410}
     </div>
   </div>
 
+  <!-- API KEY -->
   <div class="screen active" id="screen-apikey">
     <div style="text-align:center;margin-bottom:26px">
       <span class="hero-jp">はじめに</span>
@@ -165,17 +170,22 @@ select option{background:#1a1410}
     </div>
   </div>
 
+  <!-- SEARCH -->
   <div class="screen" id="screen-search">
     <div style="text-align:center;margin-bottom:8px">
       <span class="hero-jp">コード譜を</span>
       <span class="hero-en">instantly.</span>
     </div>
     <p class="hero-sub">曲名を入力するだけで歌詞とギターコードを表示します</p>
+
+    <!-- 検索ボックス -->
     <div class="igroup" style="margin-bottom:0">
       <input type="text" id="search-input" placeholder="曲名を入力（例: チェックのワンピース）" onkeydown="if(event.key==='Enter')doSearch()">
       <button class="btn-primary" id="search-btn" onclick="doSearch()">検索する</button>
     </div>
     <p class="msg error" id="search-error" style="margin:6px 0 0"></p>
+
+    <!-- URL入力 -->
     <div style="margin-top:16px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="flex:1;height:1px;background:var(--gold-faint)"></div>
@@ -186,9 +196,12 @@ select option{background:#1a1410}
       <button class="btn-ghost" id="url-btn" onclick="doFetchUrl()">🔗 URLから取得</button>
       <button class="btn-ghost" id="paste-btn" onclick="showPasteScreen()" style="margin-top:6px">📋 コピペして登録</button>
     </div>
+
+    <!-- 登録済み一覧 -->
     <div id="library-section" style="margin-top:24px"></div>
   </div>
 
+  <!-- PASTE SCREEN -->
   <div class="screen" id="screen-paste">
     <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);margin-bottom:8px">コード譜を登録</h2>
     <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">ChordWikiのページを開いて、コード譜エリアをコピー（長押し→全選択→コピー）して、下に貼り付けてください。</p>
@@ -204,6 +217,7 @@ select option{background:#1a1410}
     <p class="msg error" id="paste-error"></p>
   </div>
 
+  <!-- CONFIRM -->
   <div class="screen" id="screen-confirm">
     <div class="card">
       <p class="card-label">この曲で合っていますか？</p>
@@ -220,6 +234,7 @@ select option{background:#1a1410}
     <p class="msg error" id="confirm-error"></p>
   </div>
 
+  <!-- SEARCH RESULTS -->
   <div class="screen" id="screen-results" style="padding:0;align-items:stretch;justify-content:flex-start">
     <div style="padding:16px 24px;border-bottom:1px solid var(--gold-faint);flex-shrink:0;display:flex;align-items:center;gap:12px">
       <div style="flex:1">
@@ -231,12 +246,14 @@ select option{background:#1a1410}
     <div style="flex:1;overflow-y:auto;padding:12px" id="results-list"></div>
   </div>
 
+  <!-- LOADING -->
   <div class="screen" id="screen-loading">
     <div class="spinner"></div>
     <p class="loading-text" id="loading-text">コード譜を検索中...</p>
     <p class="loading-sub" id="loading-sub"></p>
   </div>
 
+  <!-- DISPLAY -->
   <div class="screen" id="screen-display">
     <div id="shared-banner" class="shared-banner" style="display:none">
       📎 保存済みコード譜を表示中 — <span id="shared-info"></span>
@@ -264,13 +281,15 @@ select option{background:#1a1410}
     <div class="controls">
       <div class="speed-group">
         <span class="speed-label">速度</span>
-        <button class="speed-btn" data-m="0.3" onclick="setMult(this)">0.6</button>
-        <button class="speed-btn" data-m="0.35" onclick="setMult(this)">0.7</button>
-        <button class="speed-btn" data-m="0.4" onclick="setMult(this)">0.8</button>
-        <button class="speed-btn" data-m="0.45" onclick="setMult(this)">0.9</button>
-        <button class="speed-btn active" data-m="0.5" onclick="setMult(this)">1</button>
-        <button class="speed-btn" data-m="0.55" onclick="setMult(this)">1.1</button>
-        <button class="speed-btn" data-m="0.6" onclick="setMult(this)">1.2</button>
+        <button class="speed-btn" data-m="0.2" onclick="setMult(this)">0.7</button>
+        <button class="speed-btn" data-m="0.25" onclick="setMult(this)">0.8</button>
+        <button class="speed-btn" data-m="0.3" onclick="setMult(this)">0.9</button>
+        <button class="speed-btn active" data-m="0.35" onclick="setMult(this)">1</button>
+        <button class="speed-btn" data-m="0.4" onclick="setMult(this)">1.1</button>
+        <button class="speed-btn" data-m="0.45" onclick="setMult(this)">1.2</button>
+        <button class="speed-btn" data-m="0.5" onclick="setMult(this)">1.3</button>
+        <button class="speed-btn" data-m="0.55" onclick="setMult(this)">1.4</button>
+        <button class="speed-btn" data-m="0.6" onclick="setMult(this)">1.5</button>
       </div>
       <button class="scroll-btn" id="scroll-toggle" onclick="toggleScroll()">▶ 自動スクロール</button>
     </div>
@@ -286,6 +305,7 @@ select option{background:#1a1410}
     </div>
   </div>
 
+  <!-- FAVORITES -->
   <div class="screen" id="screen-favorites">
     <div class="fav-header">
       <div class="fav-title-text">★ お気に入り</div>
@@ -298,20 +318,24 @@ select option{background:#1a1410}
 <div id="toast"></div>
 
 <script>
+// ── Storage ──────────────────────────────────────────
 function lsGet(k,d){try{return localStorage.getItem(k)||d||''}catch{return d||''}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
+// ── State ─────────────────────────────────────────────
 let apiKey=lsGet('cs_key');
 let model=lsGet('cs_model','gemini-3-flash-preview');
 let songInfo=null;
 let currentChordData=null;
 let currentSources=null;
 let isViewingFavorite=false;
-let scrolling=false,baseSpeed=40,speedMult=0.5,animId=null,lastTs=null;
+let scrolling=false,baseSpeed=40,speedMult=0.35,animId=null,lastTs=null;
 
+// ── Hardcoded songs (always accurate) ────────────────
 const HARDCODED_SONGS = [{"songInfo": {"title": "チェックのワンピース", "artist": "back number", "bpm": 118, "year": 2011, "genre": "J-POP"}, "chordData": {"capo": 1, "sections": [{"label": "Intro", "lines": [{"chords": "CM7  G  D  B7  Em", "lyric": ""}]}, {"label": "Verse 1", "lines": [{"chords": "CM7  G", "lyric": "夜の街を見下ろしながら"}, {"chords": "D  B7  Em", "lyric": "なんとなく気付いた事は"}, {"chords": "CM7  G", "lyric": "あんなに綺麗に光ってたってさ"}, {"chords": "D  B7  Em", "lyric": "自分は見えないんだよな"}, {"chords": "CM7  D", "lyric": "この街は色とりどりに"}, {"chords": "Bm  B7  Em", "lyric": "光と陰を連れて明日へ向かう"}, {"chords": "CM7  D", "lyric": "あの中でも僕達も"}, {"chords": "G  G7", "lyric": "光っていたのかな"}]}, {"label": "Chorus", "lines": [{"chords": "", "lyric": "これから"}, {"chords": "CM7  D", "lyric": "チェックのワンピースを"}, {"chords": "Bm  B7  Em", "lyric": "どこかで見つける度に"}, {"chords": "CM7  D", "lyric": "あぁ君を思い出すのかな"}, {"chords": "G  G7", "lyric": "嫌だな 嫌だな"}, {"chords": "", "lyric": "それでも"}, {"chords": "CM7  D", "lyric": "いつかまた出会えたら僕ならもう大丈夫だと"}, {"chords": "Bm  B7  Em", "lyric": "言えるように"}, {"chords": "CM7  D  G  G7", "lyric": "君のいない明日を光らせよう"}, {"chords": "CM7  G  D  B7  Em", "lyric": ""}]}, {"label": "Verse 2", "lines": [{"chords": "CM7  G", "lyric": "君の頼んだものの方がさ"}, {"chords": "D  B7  Em", "lyric": "なんでも美味しかったり"}, {"chords": "CM7  G", "lyric": "いつも君の方が正しかったし"}, {"chords": "D  B7  Em", "lyric": "別れも仕方ないのだろう"}, {"chords": "CM7  D  Bm  B7  Em", "lyric": ""}, {"chords": "CM7  D  G  G7", "lyric": ""}, {"chords": "CM7  D", "lyric": "君からもらったもの"}, {"chords": "Bm  B7  Em", "lyric": "全てを思い出せるわけじゃないけど"}, {"chords": "CM7  D", "lyric": "大事にしていたんだよ"}, {"chords": "G  G7", "lyric": "大事にしてたんだよ"}]}, {"label": "Chorus", "lines": [{"chords": "", "lyric": "これから"}, {"chords": "CM7  D", "lyric": "チェックのワンピースを"}, {"chords": "Bm  B7  Em", "lyric": "どこかで見つける度に"}, {"chords": "CM7  D", "lyric": "あぁ君を思い出すのかな"}, {"chords": "G  G7", "lyric": "嫌だな 嫌だな"}, {"chords": "", "lyric": "それでも"}, {"chords": "CM7  D", "lyric": "いつかまた出会えたら"}, {"chords": "Bm  B7  Em", "lyric": "僕ならもう大丈夫だと言えるように"}, {"chords": "CM7  D  G  G7", "lyric": "君より似合う誰かを見つけるから"}]}, {"label": "Outro", "lines": [{"chords": "CM7  D  Bm  Em", "lyric": ""}, {"chords": "CM7  D  G  G7", "lyric": ""}, {"chords": "CM7  G  D  B7  Em", "lyric": ""}]}]}}];
+
 
 function findHardcoded(title, artist){
   const t=title.trim().replace(/\s+/g,'');
@@ -323,21 +347,26 @@ function findHardcoded(title, artist){
   })||null;
 }
 
+// ── Init ──────────────────────────────────────────────
 document.getElementById('model-select').value=model;
 (function init(){
   if(apiKey){
     document.getElementById('api-key-input').value=apiKey;
     showScreen('search');
   }
+
 })();
 
+// ── Screen ────────────────────────────────────────────
 function showScreen(n){
   if(n==='search') setTimeout(()=>{ try{ renderLibraryList(); }catch{} }, 0);
+
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const scr=document.getElementById('screen-'+n);
   if(scr) scr.classList.add('active');
   const isDisplay=n==='display';
   const isSearch=n==='search';
+  const isResults=n==='results';
   const backBtn=document.getElementById('back-btn');
   const favNavBtn=document.getElementById('fav-nav-btn');
   if(backBtn) backBtn.style.display=isDisplay?'':'none';
@@ -368,6 +397,7 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
+// ── API Key ───────────────────────────────────────────
 function saveApiKey(){
   const v=document.getElementById('api-key-input').value.trim();
   if(!v){showMsg('APIキーを入力してください','var(--red)');return}
@@ -397,6 +427,7 @@ async function fetchModels(){
   finally{btn.disabled=false;btn.textContent='↻ モデル一覧'}
 }
 
+// ── Gemini API ────────────────────────────────────────
 async function callGemini(msgs,sys,useSearch=false,attempt=0){
   const body={
     system_instruction:{parts:[{text:sys}]},
@@ -404,7 +435,7 @@ async function callGemini(msgs,sys,useSearch=false,attempt=0){
     generationConfig:{maxOutputTokens:8192,temperature:0.3}
   };
   if(useSearch)body.tools=[{google_search:{}}];
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,{
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+currentModel+':generateContent?key='+currentApiKey,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
   });
   const raw=await r.text();
@@ -444,34 +475,40 @@ function esc(s){
     .split('"').join('&quot;');
 }
 
+// ── Search ────────────────────────────────────────────
+// ── Library ──────────────────────────────────────────
 const LIBRARY_KEY='chordsheet_library_v1';
-function loadLibrary(){try{return JSON.parse(localStorage.getItem(LIBRARY_KEY)||'[]');}catch{return [];}}
-function saveLibrary(lib){localStorage.setItem(LIBRARY_KEY,JSON.stringify(lib));}
-function findInLibrary(title,artist){
+function loadLibrary(){
+  try{ return JSON.parse(localStorage.getItem(LIBRARY_KEY)||'[]'); }catch{ return []; }
+}
+function saveLibrary(lib){
+  localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+}
+function findInLibrary(title, artist){
   const lib=loadLibrary();
   const t=(title||'').trim().toLowerCase().replace(/\s+/g,'');
   const a=(artist||'').trim().toLowerCase().replace(/\s+/g,'');
   return lib.find(s=>{
     const st=(s.songInfo.title||'').trim().toLowerCase().replace(/\s+/g,'');
     const sa=(s.songInfo.artist||'').trim().toLowerCase().replace(/\s+/g,'');
-    return st===t&&(a===''||sa===a||sa.includes(a)||a.includes(sa));
+    return st===t && (a===''||sa===a||sa.includes(a)||a.includes(sa));
   });
 }
 function searchLibrary(query){
   const q=query.trim().toLowerCase().replace(/\s+/g,'');
-  if(!q)return[];
+  if(!q) return [];
   const lib=loadLibrary();
   return lib.filter(s=>{
     const t=(s.songInfo.title||'').toLowerCase().replace(/\s+/g,'');
     const a=(s.songInfo.artist||'').toLowerCase().replace(/\s+/g,'');
-    return t.includes(q)||a.includes(q)||q.includes(t);
+    return t.includes(q) || a.includes(q) || q.includes(t);
   });
 }
 function renderLibraryList(){
   const lib=loadLibrary();
   const el=document.getElementById('library-section');
-  if(!el)return;
-  if(lib.length===0){el.innerHTML='';return;}
+  if(!el) return;
+  if(lib.length===0){ el.innerHTML=''; return; }
   let html='<div style="font-size:11px;color:var(--text-dim);font-family:Space Mono,monospace;margin-bottom:8px;letter-spacing:0.1em">📚 登録済み '+lib.length+'曲</div>';
   const sorted=[...lib].sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
   for(const song of sorted.slice(0,30)){
@@ -489,7 +526,7 @@ function renderLibraryList(){
 function openLibrarySong(id){
   const lib=loadLibrary();
   const song=lib.find(s=>s.id===id);
-  if(!song)return;
+  if(!song) return;
   songInfo={...song.songInfo};
   baseSpeed=bpmSpd(songInfo.bpm||120);
   currentChordData=song.chordData;
@@ -499,7 +536,7 @@ function openLibrarySong(id){
   showScreen('display');
 }
 function deleteLibrarySong(id){
-  if(!confirm('この曲を登録から削除しますか?'))return;
+  if(!confirm('この曲を登録から削除しますか?')) return;
   let lib=loadLibrary();
   lib=lib.filter(s=>s.id!==id);
   saveLibrary(lib);
@@ -507,6 +544,7 @@ function deleteLibrarySong(id){
   showToast('削除しました');
 }
 
+// ── Paste-and-save ───────────────────────────────────
 function showPasteScreen(){
   document.getElementById('paste-title').value='';
   document.getElementById('paste-artist').value='';
@@ -525,19 +563,31 @@ function savePastedSong(){
   const raw=document.getElementById('paste-content').value;
   const err=document.getElementById('paste-error');
   err.textContent='';
-  if(!title){err.textContent='曲名を入力してください';return;}
-  if(!raw||raw.trim().length<20){err.textContent='コード譜の内容が短すぎます';return;}
-  const chordData=parsePastedChordSheet(raw,capo);
+  if(!title){ err.textContent='曲名を入力してください'; return; }
+  if(!raw||raw.trim().length<20){ err.textContent='コード譜の内容が短すぎます'; return; }
+
+  const chordData=parsePastedChordSheet(raw, capo);
   if(!chordData||!chordData.sections||chordData.sections.length===0){
-    err.textContent='コード譜の解析に失敗しました。形式を確認してください。';return;
+    err.textContent='コード譜の解析に失敗しました。形式を確認してください。';
+    return;
   }
+
   const id='song_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  const newSong={id,addedAt:Date.now(),songInfo:{title,artist:artist||'',bpm:bpm||120},chordData};
+  const newSong={
+    id, addedAt:Date.now(),
+    songInfo:{title, artist:artist||'', bpm:bpm||120},
+    chordData
+  };
+
   let lib=loadLibrary();
-  const existing=findInLibrary(title,artist);
-  if(existing){if(!confirm('「'+title+'」は既に登録済みです。上書きしますか?'))return;lib=lib.filter(s=>s.id!==existing.id);}
+  const existing=findInLibrary(title, artist);
+  if(existing){
+    if(!confirm('「'+title+'」は既に登録済みです。上書きしますか?')){ return; }
+    lib=lib.filter(s=>s.id!==existing.id);
+  }
   lib.push(newSong);
   saveLibrary(lib);
+
   songInfo=newSong.songInfo;
   baseSpeed=bpmSpd(bpm||120);
   currentChordData=chordData;
@@ -548,240 +598,433 @@ function savePastedSong(){
   showToast('✓ 登録しました');
 }
 
+// ── Parser for pasted ChordWiki text ──────────────────
 function stripChordWikiHeader(raw){
-  if(!raw)return raw;
+  if(!raw) return raw;
   const lines=raw.split('\n');
-  const headerEndPatterns=[/歌[：:]/,/作詞[・・]/,/作曲[：:]/,/[Cc]apo/,/BPM/];
+  // Find the line with 歌：or 作詞・作曲 or Capo or first chord/lyric line
+  const headerEndPatterns=[
+    /歌[：:]/,
+    /作詞[・・]/,
+    /作曲[：:]/,
+    /[Cc]apo/,
+    /BPM/,
+  ];
+  // Also detect: if a line has actual chord or lyric content (not just menu items)
+  const noisePatterns=[
+    /^\[ランキング\]$/,/^\[検索\]$/,/^\[編集\]$/,/^\[履歴\]$/,
+    /^\[ノート\]$/,/^\[評価\]$/,/^\[ランダム\]$/,/^\[閲覧履歴\]$/,
+    /^\[コードブック\]$/,/^移調[:：]/,/^速度[:：]/,/^評価[:：]?$/,
+    /^登録タグ/,/^楽曲情報/,/^YouTube$/,/^\+\d+$/,/^-\d+$/,
+    /^♯表記$/,/^♭表記$/,/^指定なし$/,/^\d+$/,
+  ];
+
   let headerEnd=-1;
   for(let i=0;i<lines.length;i++){
     const t=lines[i].trim();
-    if(!t)continue;
-    if(headerEndPatterns.some(p=>p.test(t))){headerEnd=i;break;}
+    if(!t) continue;
+    // Check if this line is a header end marker
+    if(headerEndPatterns.some(p=>p.test(t))){
+      headerEnd=i;
+      break;
+    }
   }
-  if(headerEnd<0)return raw;
+
+  if(headerEnd<0) return raw; // No header detected, return as-is
+
+  // Find the last noise line at or after headerEnd to trim everything up to actual content
+  // Actually: keep from headerEnd onwards
   return lines.slice(headerEnd).join('\n');
 }
 
-function parsePastedChordSheet(raw,capo){
+function parsePastedChordSheet(raw, capo){
+  // Strip ChordWiki header noise (everything before 歌：or 作詞 line)
   raw=stripChordWikiHeader(raw);
+
+  // ChordPro format detection: [Em7]歌詞
   const chordProRe=new RegExp('\\[[A-G][^\\]]{0,10}\\]');
-  if(chordProRe.test(raw))return parseChordProText(raw,capo);
+  if(chordProRe.test(raw)) return parseChordProText(raw, capo);
+
   const rawLines=raw.replace(/\r/g,'').split('\n');
   const sections=[];
-  let curSection={label:'',lines:[]};
+  let curSection={label:'', lines:[]};
   let pendingChord=null;
+
   const secWords='イントロ|intro|aメロ|bメロ|cメロ|サビ|chorus|プリサビ|bridge|ブリッジ|間奏|interlude|outro|アウトロ|ending|エンディング|solo|ソロ|verse';
   const secRe=new RegExp('^[\\s\\-=【\\[(]*\\s*('+secWords+')\\s*\\d*[\\s\\-=】\\])]*$','i');
   const chordRe=new RegExp('^[\\s]*((?:[A-G][#b]?(?:m|maj|min|sus|aug|dim|add|M)?\\d{0,2}(?:\\([^)]+\\))?(?:\\/[A-G][#b]?)?[\\s|]*)+)$');
-  function flushChord(){if(pendingChord){curSection.lines.push({chords:pendingChord,lyric:''});pendingChord=null;}}
-  function pushSection(label){flushChord();if(curSection.lines.length>0||curSection.label)sections.push(curSection);curSection={label:label||'',lines:[]};}
+
+  function flushChord(){
+    if(pendingChord){
+      curSection.lines.push({chords:pendingChord, lyric:''});
+      pendingChord=null;
+    }
+  }
+  function pushSection(label){
+    flushChord();
+    if(curSection.lines.length>0||curSection.label) sections.push(curSection);
+    curSection={label:label||'', lines:[]};
+  }
+
   for(let i=0;i<rawLines.length;i++){
     const trimmed=rawLines[i].trim();
-    if(!trimmed){flushChord();continue;}
+    if(!trimmed){ flushChord(); continue; }
     const secM=trimmed.match(secRe);
-    if(secM){pushSection(normalizeSection(secM[1]));continue;}
-    if(chordRe.test(trimmed)){flushChord();pendingChord=trimmed.replace(/\s+/g,'  ');continue;}
-    if(pendingChord){curSection.lines.push({chords:pendingChord,lyric:trimmed});pendingChord=null;}
-    else{curSection.lines.push({chords:'',lyric:trimmed});}
+    if(secM){ pushSection(normalizeSection(secM[1])); continue; }
+    if(chordRe.test(trimmed)){ flushChord(); pendingChord=trimmed.replace(/\s+/g,'  '); continue; }
+    if(pendingChord){ curSection.lines.push({chords:pendingChord, lyric:trimmed}); pendingChord=null; }
+    else { curSection.lines.push({chords:'', lyric:trimmed}); }
   }
   flushChord();
-  if(curSection.lines.length>0||curSection.label)sections.push(curSection);
+  if(curSection.lines.length>0||curSection.label) sections.push(curSection);
   const cleaned=sections.filter(s=>s.lines.length>0);
-  if(cleaned.length===0)return null;
-  if(!cleaned[0].label)cleaned[0].label='Verse';
-  return{capo:capo||0,sections:cleaned};
+  if(cleaned.length===0) return null;
+  if(!cleaned[0].label) cleaned[0].label='Verse';
+  return {capo:capo||0, sections:cleaned};
 }
 
 function normalizeSection(label){
   const l=label.toLowerCase();
-  if(/intro|イントロ/i.test(l))return'イントロ';
-  if(/aメロ/i.test(l)||/^verse\s*1?$/i.test(l))return'Aメロ';
-  if(/bメロ/i.test(l)||/^verse\s*2$/i.test(l))return'Bメロ';
-  if(/cメロ/i.test(l))return'Cメロ';
-  if(/プリ|pre\s*chorus/i.test(l))return'プリサビ';
-  if(/サビ|chorus/i.test(l))return'サビ';
-  if(/bridge|ブリッジ/i.test(l))return'ブリッジ';
-  if(/間奏|interlude/i.test(l))return'間奏';
-  if(/outro|アウトロ|ending|エンディング/i.test(l))return'アウトロ';
-  if(/solo|ソロ/i.test(l))return'ソロ';
+  if(/intro|イントロ/i.test(l)) return 'イントロ';
+  if(/aメロ/i.test(l)||/^verse\s*1?$/i.test(l)) return 'Aメロ';
+  if(/bメロ/i.test(l)||/^verse\s*2$/i.test(l)) return 'Bメロ';
+  if(/cメロ/i.test(l)) return 'Cメロ';
+  if(/プリ|pre\s*chorus/i.test(l)) return 'プリサビ';
+  if(/サビ|chorus/i.test(l)) return 'サビ';
+  if(/bridge|ブリッジ/i.test(l)) return 'ブリッジ';
+  if(/間奏|interlude/i.test(l)) return '間奏';
+  if(/outro|アウトロ|ending|エンディング/i.test(l)) return 'アウトロ';
+  if(/solo|ソロ/i.test(l)) return 'ソロ';
   return label;
 }
 
-function parseChordProText(raw,capo){
+function parseChordProText(raw, capo){
   const rawLines=raw.replace(/\r/g,'').split('\n');
   const sections=[];
-  let cur={label:'',lines:[]};
+  let cur={label:'', lines:[]};
   const secWords2='イントロ|aメロ|bメロ|cメロ|サビ|プリサビ|間奏|アウトロ|verse|chorus|bridge|intro|outro|interlude|solo';
   const secRe2=new RegExp('^\\[?\\s*('+secWords2+')\\s*\\d*\\s*\\]?$','i');
+
   for(const line of rawLines){
     const t=line.trim();
-    if(!t)continue;
+    if(!t) continue;
     const secM=t.match(secRe2)||t.match(/\{(?:start_of_|comment:?)\s*([^}]+)\}/i);
-    if(secM){if(cur.lines.length>0)sections.push(cur);cur={label:normalizeSection(secM[1]),lines:[]};continue;}
+    if(secM){ if(cur.lines.length>0) sections.push(cur); cur={label:normalizeSection(secM[1]), lines:[]}; continue; }
     const chordRe2=new RegExp('\\[([^\\]]+)\\]([^\\[]*)','g');
-    const chords=[];let lyric='';let m2,hasChord=false;
-    while((m2=chordRe2.exec(t))!==null){hasChord=true;chords.push(m2[1]);lyric+=m2[2];}
-    if(!hasChord)cur.lines.push({chords:'',lyric:t});
-    else cur.lines.push({chords:chords.join('  '),lyric:lyric.trim()});
+    const chords=[];
+    let lyric='';
+    let m2, hasChord=false;
+    while((m2=chordRe2.exec(t))!==null){ hasChord=true; chords.push(m2[1]); lyric+=m2[2]; }
+    if(!hasChord) cur.lines.push({chords:'', lyric:t});
+    else cur.lines.push({chords:chords.join('  '), lyric:lyric.trim()});
   }
-  if(cur.lines.length>0)sections.push(cur);
-  if(sections.length===0)return null;
-  if(!sections[0].label)sections[0].label='Verse';
-  return{capo:capo||0,sections};
+  if(cur.lines.length>0) sections.push(cur);
+  if(sections.length===0) return null;
+  if(!sections[0].label) sections[0].label='Verse';
+  return {capo:capo||0, sections};
 }
 
+
+
+
+
+
+
+
+// ── Key transposition ────────────────────────────────
 const NOTES_S=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const NOTES_F=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-function noteIdx(n){let i=NOTES_S.indexOf(n);if(i>=0)return i;return NOTES_F.indexOf(n);}
-function shiftNote(n,s){const i=noteIdx(n);if(i<0)return n;const ni=((i+s)%12+12)%12;return s<0?NOTES_F[ni]:NOTES_S[ni];}
+
+function noteIdx(n){
+  let i=NOTES_S.indexOf(n);
+  if(i>=0)return i;
+  return NOTES_F.indexOf(n);
+}
+function shiftNote(n,s){
+  const i=noteIdx(n);
+  if(i<0)return n;
+  const ni=((i+s)%12+12)%12;
+  // Prefer flats when going down
+  return s<0?NOTES_F[ni]:NOTES_S[ni];
+}
 function transposeChord(chord,s){
   if(!chord||s===0)return chord;
-  chord=chord.trim();if(!chord)return chord;
+  chord=chord.trim();
+  if(!chord)return chord;
+  // Match: root [quality] [/bass]
   const m=chord.match(/^([A-G][#b]?)((?:m|M|maj|min|sus|aug|dim|add|[0-9]|\(|\))*)((?:\/[A-G][#b]?)?)$/);
   if(!m)return chord;
-  return shiftNote(m[1],s)+m[2]+(m[3]?'/'+shiftNote(m[3].slice(1),s):'');
+  const newRoot=shiftNote(m[1],s);
+  const newBass=m[3]?'/'+shiftNote(m[3].slice(1),s):'';
+  return newRoot+m[2]+newBass;
 }
 
 let currentKeyShift=0;
+
 function setKeyShift(shift){
   currentKeyShift=shift;
-  document.querySelectorAll('.key-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.shift)===shift));
+  // Update button states
+  document.querySelectorAll('.key-btn').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.shift)===shift);
+  });
+  // Calculate capo and chord shift
   const origCapo=currentChordData?currentChordData.capo||0:0;
   const rawCapo=origCapo+shift;
   const newCapo=Math.max(0,rawCapo);
-  const chordShift=rawCapo-newCapo;
+  const chordShift=rawCapo-newCapo; // 0 or negative
+  // Show hint
   const hint=document.getElementById('key-capo-hint');
   if(hint){
-    if(shift===0)hint.textContent='';
-    else if(chordShift===0)hint.textContent='カポ '+newCapo+' (元: '+origCapo+')';
-    else hint.textContent='カポ '+newCapo+' + コード'+chordShift+'半音';
+    if(shift===0){hint.textContent='';}
+    else if(chordShift===0){hint.textContent='カポ '+newCapo+' (元: '+origCapo+')';}
+    else{hint.textContent='カポ '+newCapo+' + コード'+chordShift+'半音';}
   }
-  if(currentChordData)renderTransposed(currentChordData,newCapo,chordShift);
+  // Re-render with transposed chords
+  if(currentChordData) renderTransposed(currentChordData, newCapo, chordShift);
 }
 
-function renderTransposed(data,newCapo,chordShift){
-  const transposed={capo:newCapo,sections:data.sections.map(sec=>({label:sec.label,lines:sec.lines.map(line=>({chords:line.chords?line.chords.split(/\s{2,}|\s+/).map(c=>transposeChord(c,chordShift)).join('  '):'',lyric:line.lyric||''}))}))}; 
-  renderDisplay(transposed,currentSources,false,true);
+function renderTransposed(data, newCapo, chordShift){
+  // Build a transposed copy of chordData
+  const transposed={
+    capo:newCapo,
+    sections:data.sections.map(sec=>({
+      label:sec.label,
+      lines:sec.lines.map(line=>({
+        chords:line.chords?line.chords.split(/\s{2,}|\s+/).map(c=>transposeChord(c,chordShift)).join('  '):'',
+        lyric:line.lyric||''
+      }))
+    }))
+  };
+  renderDisplay(transposed, currentSources, false, true);
 }
 
 async function doSearch(){
   const raw=document.getElementById('search-input').value.trim();
   if(!raw)return;
   document.getElementById('search-error').textContent='';
+
   const libMatches=searchLibrary(raw);
-  if(libMatches.length===1){openLibrarySong(libMatches[0].id);return;}
-  if(libMatches.length>1){showResultsList(raw,libMatches.map(s=>({title:s.songInfo.title,artist:s.songInfo.artist,bpm:s.songInfo.bpm,_libId:s.id})));return;}
+  if(libMatches.length===1){
+    openLibrarySong(libMatches[0].id);
+    return;
+  }
+  if(libMatches.length>1){
+    const candidates=libMatches.map(s=>({
+      title:s.songInfo.title,
+      artist:s.songInfo.artist,
+      bpm:s.songInfo.bpm,
+      _libId:s.id
+    }));
+    showResultsList(raw, candidates);
+    return;
+  }
+
+  // Not in library: show registration prompt with helpful links
   const q=encodeURIComponent(raw);
-  document.getElementById('search-error').innerHTML='「'+esc(raw)+'」はまだ登録されていません。<br><span style="color:var(--text-dim);font-size:11px;display:block;margin-top:6px">下の「📋 ChordWikiからコピペして登録」から追加してください。</span><div style="margin-top:10px;font-size:12px"><a href="https://ja.chordwiki.org/search.html?q='+q+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a></div>';
+  document.getElementById('search-error').innerHTML=
+    '「'+esc(raw)+'」はまだ登録されていません。<br>'
+    +'<span style="color:var(--text-dim);font-size:11px;display:block;margin-top:6px">下の「📋 ChordWikiからコピペして登録」から追加してください。</span>'
+    +'<div style="margin-top:10px;font-size:12px">'
+      +'<a href="https://ja.chordwiki.org/search.html?q='+q+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a>'
+      +'</div>'
+    +'</div>';
 }
+
 
 async function fetchWithProxy(url){
   const WORKER='https://chordsheet-proxy.shiba2520.workers.dev/?url=';
   let r;
-  try{r=await fetch(WORKER+encodeURIComponent(url),{signal:AbortSignal.timeout(15000)});}
-  catch(e){throw new Error('Worker接続失敗: '+e.message.slice(0,60));}
+  try{
+    r=await fetch(WORKER+encodeURIComponent(url),{signal:AbortSignal.timeout(15000)});
+  }catch(e){
+    throw new Error('Worker接続失敗: '+e.message.slice(0,60));
+  }
   const t=await r.text();
-  if(!t||t.length<200)throw new Error('Worker応答短すぎ(status='+r.status+',len='+t.length+')');
-  if(t.startsWith('fetch error'))throw new Error('Worker fetch失敗: '+t.slice(0,60));
-  if(t.startsWith('url param'))throw new Error('WorkerパラメータエラーURL確認を');
+  console.log('Worker response: status='+r.status+' length='+t.length+' preview='+t.slice(0,100));
+  if(!t||t.length<200) throw new Error('Worker応答短すぎ(status='+r.status+',len='+t.length+')');
+  if(t.startsWith('fetch error')) throw new Error('Worker fetch失敗: '+t.slice(0,60));
+  if(t.startsWith('url param')) throw new Error('WorkerパラメータエラーURL確認を');
   return t;
 }
 
 async function doFetchUrl(){
   const url=document.getElementById('url-input').value.trim();
-  if(!url){document.getElementById('search-error').textContent='URLを入力してください';return;}
-  if(!url.includes('chordwiki.org')){document.getElementById('search-error').textContent='ChordWikiのURLを入力してください（例: https://ja.chordwiki.org/wiki/lulu.）';return;}
+  if(!url){ document.getElementById('search-error').textContent='URLを入力してください'; return; }
+  if(!url.includes('chordwiki.org')){
+    document.getElementById('search-error').textContent='ChordWikiのURLを入力してください（例: https://ja.chordwiki.org/wiki/lulu.）'; return;
+  }
   const btn=document.getElementById('url-btn');
-  btn.disabled=true;btn.textContent='取得中...';
+  btn.disabled=true; btn.textContent='取得中...';
   document.getElementById('search-error').textContent='';
   document.getElementById('loading-text').textContent='ChordWikiから取得中...';
   document.getElementById('loading-sub').textContent='HTMLを取得中...';
   showScreen('loading');
   try{
-    let html=null,proxyErr='';
-    try{html=await fetchWithProxy(url);}catch(e){proxyErr=e.message;}
-    if(!html||html.length<500){
-      document.getElementById('search-error').innerHTML='アクセス失敗: '+esc(proxyErr||'不明なエラー')+'<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ ChordWikiを直接開く ↗</a>';
-      showScreen('search');return;
+    let html=null;
+    let proxyErr='';
+    try{
+      html=await fetchWithProxy(url);
+    }catch(e){
+      proxyErr=e.message;
+      console.warn('proxy failed:',e.message);
     }
+
+    if(!html||html.length<500){
+      document.getElementById('search-error').innerHTML=
+        'アクセス失敗: '+esc(proxyErr||'不明なエラー')+'<br>'
+        +'<a href="'+url+'" target="_blank" style="color:var(--gold)">→ ChordWikiを直接開く ↗</a>';
+      showScreen('search'); return;
+    }
+
     document.getElementById('loading-sub').textContent='コード譜を解析中...';
     const doc=new DOMParser().parseFromString(html,'text/html');
+
     const titleFromUrl=decodeURIComponent((url.split('/wiki/').pop()||'').replace(/[?#].*$/u,'')).trim();
     const bodyText=doc.body.textContent||'';
     let pageTitle=titleFromUrl;
     const h1=doc.querySelector('h1,h2');
-    if(h1&&h1.textContent.trim())pageTitle=h1.textContent.trim().slice(0,80);
+    if(h1&&h1.textContent.trim()) pageTitle=h1.textContent.trim().slice(0,80);
+
     let artist='';
     const m=bodyText.match(new RegExp('歌[\uff1a\uff0f:]\s*([^\r\n]{1,40})'));
-    if(m)artist=m[1].trim();
+    if(m) artist=m[1].trim();
+
     let capo=0;
     const capoMatch=bodyText.match(/[Cc]apo[^0-9]*([0-9]+)/);
-    if(capoMatch)capo=parseInt(capoMatch[1]);
+    if(capoMatch) capo=parseInt(capoMatch[1]);
+
     let bpm=null;
     const bpmMatch=bodyText.match(/BPM[：: ]*([0-9]+)/i);
-    if(bpmMatch)bpm=parseInt(bpmMatch[1]);
-    const chordData=extractChordDataFromDOM(doc,capo);
+    if(bpmMatch) bpm=parseInt(bpmMatch[1]);
+
+    const chordData=extractChordDataFromDOM(doc, capo);
+
     if(!chordData||!chordData.sections||chordData.sections.length===0){
-      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ ChordWikiを直接確認 ↗</a>';
-      showScreen('search');return;
+      document.getElementById('search-error').innerHTML=
+        'コード譜の解析に失敗しました。<br>'
+        +'<a href="'+url+'" target="_blank" style="color:var(--gold)">→ ChordWikiを直接確認 ↗</a>';
+      showScreen('search'); return;
     }
+
     const id='song_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
     const newSong={id,addedAt:Date.now(),songInfo:{title:pageTitle,artist:artist||'',bpm:bpm||120},chordData};
     let lib=loadLibrary();
     const existing=findInLibrary(pageTitle,artist);
-    if(existing)lib=lib.filter(s=>s.id!==existing.id);
-    lib.push(newSong);saveLibrary(lib);
-    songInfo=newSong.songInfo;baseSpeed=bpmSpd(bpm||120);
+    if(existing) lib=lib.filter(s=>s.id!==existing.id);
+    lib.push(newSong);
+    saveLibrary(lib);
+
+    songInfo=newSong.songInfo;
+    baseSpeed=bpmSpd(bpm||120);
     currentChordData=chordData;
     currentSources={sources:[{uri:url,title:'ChordWiki'}],searchQueries:[]};
     isViewingFavorite=false;
-    renderDisplay(chordData,currentSources);showScreen('display');showToast('✓ 取得・登録しました');
-  }catch(e){document.getElementById('search-error').textContent='エラー: '+e.message;showScreen('search');}
-  finally{btn.disabled=false;btn.textContent='🔗 URLから取得';}
+    renderDisplay(chordData,currentSources);
+    showScreen('display');
+    showToast('✓ 取得・登録しました');
+  }catch(e){
+    document.getElementById('search-error').textContent='エラー: '+e.message;
+    showScreen('search');
+  }finally{ btn.disabled=false; btn.textContent='🔗 URLから取得'; }
 }
 
-function extractChordDataFromDOM(doc,capo){
+function extractChordDataFromDOM(doc, capo){
+  // Remove ChordWiki navigation/UI elements
   doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style').forEach(el=>el.remove());
+
+  // ChordWiki: try textarea first
   const textarea=doc.querySelector('textarea');
-  if(textarea){const src=textarea.value||textarea.textContent||'';if(src.includes('['))return parseChordProText(src,capo);}
-  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe,noscript').forEach(el=>el.remove());
-  const sections=[];let curSection={label:'',lines:[]};let chordBuf=[],lyricBuf='';
-  function flush(){if(chordBuf.length>0||lyricBuf.trim()){curSection.lines.push({chords:chordBuf.join('  '),lyric:lyricBuf.trim()});chordBuf=[];lyricBuf='';}}
-  function pushSection(label){flush();if(curSection.lines.length>0)sections.push(curSection);curSection={label,lines:[]};}
-  function walkNode(node){
-    if(node.nodeType===3){const txt=node.textContent||'';const parts=txt.split('\n');for(let i=0;i<parts.length;i++){if(i>0)flush();if(parts[i].trim())lyricBuf+=parts[i];}return;}
-    if(node.nodeType!==1)return;
-    const tag=node.tagName.toLowerCase();const cls=(node.className||'').toLowerCase();const txt=node.textContent.trim();
-    if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('block-title')){const sec=normalizeSection(txt);if(txt.length<30){pushSection(sec);return;}}
-    if(/^[A-G][#b]?/.test(txt)&&txt.length<15&&(cls.includes('chord')||tag==='span')){chordBuf.push(txt);return;}
-    if(tag==='br'){flush();return;}
-    if(/^(div|p|li|tr|td|section|article)$/.test(tag)){for(const child of node.childNodes)walkNode(child);flush();return;}
-    for(const child of node.childNodes)walkNode(child);
+  if(textarea){
+    const src=textarea.value||textarea.textContent||'';
+    if(src.includes('[')) return parseChordProText(src, capo);
   }
+
+  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe,noscript').forEach(el=>el.remove());
+
+  const sections=[];
+  let curSection={label:'', lines:[]};
+  let chordBuf=[], lyricBuf='';
+
+  function flush(){
+    if(chordBuf.length>0||lyricBuf.trim()){
+      curSection.lines.push({chords:chordBuf.join('  '),lyric:lyricBuf.trim()});
+      chordBuf=[]; lyricBuf='';
+    }
+  }
+  function pushSection(label){
+    flush();
+    if(curSection.lines.length>0) sections.push(curSection);
+    curSection={label,lines:[]};
+  }
+
+  function walkNode(node){
+    if(node.nodeType===3){
+      const txt=node.textContent||'';
+      const parts=txt.split('\n');
+      for(let i=0;i<parts.length;i++){
+        if(i>0) flush();
+        if(parts[i].trim()) lyricBuf+=parts[i];
+      }
+      return;
+    }
+    if(node.nodeType!==1) return;
+    const tag=node.tagName.toLowerCase();
+    const cls=(node.className||'').toLowerCase();
+    const txt=node.textContent.trim();
+    if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('block-title')){
+      const sec=normalizeSection(txt);
+      if(txt.length<30){ pushSection(sec); return; }
+    }
+    if(/^[A-G][#b]?/.test(txt)&&txt.length<15&&(cls.includes('chord')||tag==='span')){
+      chordBuf.push(txt); return;
+    }
+    if(tag==='br'){ flush(); return; }
+    if(/^(div|p|li|tr|td|section|article)$/.test(tag)){
+      for(const child of node.childNodes) walkNode(child);
+      flush(); return;
+    }
+    for(const child of node.childNodes) walkNode(child);
+  }
+
   const main=doc.querySelector('#chord,#chord_area,.chord_area,#main,main')||doc.body;
-  for(const child of main.childNodes)walkNode(child);
-  flush();if(curSection.lines.length>0)sections.push(curSection);
+  for(const child of main.childNodes) walkNode(child);
+  flush();
+  if(curSection.lines.length>0) sections.push(curSection);
+
   const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
-  if(cleaned.length===0)return parsePastedChordSheet(doc.body.textContent||'',capo);
-  if(!cleaned[0].label)cleaned[0].label='イントロ';
-  return{capo:capo||0,sections:cleaned};
+  if(cleaned.length===0) return parsePastedChordSheet(doc.body.textContent||'', capo);
+  if(!cleaned[0].label) cleaned[0].label='イントロ';
+  return {capo:capo||0, sections:cleaned};
 }
 
-function showResultsList(query,candidates){
+
+
+
+function showResultsList(query, candidates){
   document.getElementById('results-query').textContent='「'+query+'」の検索結果 '+candidates.length+'件';
-  const list=document.getElementById('results-list');list.innerHTML='';
+  const list=document.getElementById('results-list');
+  list.innerHTML='';
   candidates.forEach((c,i)=>{
     const item=document.createElement('div');item.className='result-item';
     const cwBadge=c.chordWikiUrl?'<span style="font-size:9px;background:#c8a96e22;border:1px solid #c8a96e44;color:var(--gold);border-radius:8px;padding:1px 6px;margin-left:6px">ChordWiki</span>':'';
-    item.innerHTML='<div class="result-num">'+(i+1)+'</div><div class="result-info"><div class="result-title">'+esc(c.title||'')+cwBadge+'</div><div class="result-artist">'+esc(c.artist||'')+'</div><div class="result-meta">'+(c.year?c.year+'年  ':'')+esc(c.genre||'')+(c.bpm?'  ♩ '+c.bpm+' BPM':'')+'</div></div><div class="result-arrow">›</div>';
-    item.onclick=()=>selectCandidate(c);list.appendChild(item);
+    item.innerHTML='<div class="result-num">'+(i+1)+'</div>'
+      +'<div class="result-info">'
+        +'<div class="result-title">'+esc(c.title||'')+cwBadge+'</div>'
+        +'<div class="result-artist">'+esc(c.artist||'')+'</div>'
+        +'<div class="result-meta">'+(c.year?c.year+'年  ':'')+esc(c.genre||'')+(c.bpm?'  ♩ '+c.bpm+' BPM':'')+'</div>'
+      +'</div>'
+      +'<div class="result-arrow">›</div>';
+    item.onclick=()=>selectCandidate(c);
+    list.appendChild(item);
   });
   showScreen('results');
 }
 
 function selectCandidate(info){
-  if(info._libId){openLibrarySong(info._libId);return;}
-  songInfo=info;baseSpeed=bpmSpd(info.bpm||120);
+  // If candidate is from library, open directly
+  if(info._libId){ openLibrarySong(info._libId); return; }
+  songInfo=info;
+  baseSpeed=bpmSpd(info.bpm||120);
   document.getElementById('confirm-title').textContent=info.title;
   document.getElementById('confirm-artist').textContent=info.artist||'（アーティスト未確認）';
   document.getElementById('confirm-year').textContent=info.year?info.year+'年':'';
@@ -791,11 +1034,14 @@ function selectCandidate(info){
   showScreen('confirm');
 }
 
+// ── Confirm / Reroll ──────────────────────────────────
 async function doConfirm(){
   document.getElementById('confirm-error').textContent='';
   document.getElementById('loading-text').textContent='コード譜を取得中...';
   document.getElementById('loading-sub').textContent=songInfo.title+' / '+songInfo.artist;
   showScreen('loading');
+
+  // ── 1. Hardcoded ─────────────────────────────────────
   const hc=findHardcoded(songInfo.title,songInfo.artist);
   if(hc){
     songInfo={...songInfo,...hc.songInfo};currentChordData=hc.chordData;
@@ -803,28 +1049,67 @@ async function doConfirm(){
     isViewingFavorite=false;renderDisplay(hc.chordData,currentSources);showScreen('display');
     showToast('📌 保存済みコード譜を表示しました');return;
   }
+
+  // ── 2. Determine URL ─────────────────────────────────
   let targetUrl=songInfo.chordWikiUrl||songInfo.sourceUrl||null;
+
+  // ── 3. Use Gemini to fetch and parse the page via Google Search ─
   document.getElementById('loading-sub').textContent='Geminiでコード譜を取得中...';
   try{
-    const prompt=targetUrl
-      ?'次のコード譜ページにアクセスして、その内容を忠実にJSON化してください: '+targetUrl+'\n\n出力形式（マークダウン不要、JSONのみ）:\n{"capo":0,"sections":[{"label":"イントロ","lines":[{"chords":"Em7  G/B","lyric":""},{"chords":"Em7","lyric":"歌詞"}]}]}\n\n重要なルール:\n・ページに書かれている内容のみを反映、推測や創作は厳禁\n・コードは1行、その下に対応する歌詞行のペアで記録\n・歌詞のみの行は chords を空文字列に\n・コードのみの行（イントロ等）は lyric を空文字列に\n・全セクション（イントロ・Aメロ・サビ・アウトロ等）と全歌詞を漏らさない\n・繰り返し記号は展開せずそのままセクションラベルに記録\n・カポ情報があれば capo に整数で（なければ0）'
-      :'「'+songInfo.title+'」'+(songInfo.artist?' '+songInfo.artist:'')+'のギターコード譜を ja.chordwiki.org で検索し、見つかったページの内容を忠実にJSON化してください。\n\n出力形式（マークダウン不要、JSONのみ）:\n{"capo":0,"sections":[{"label":"イントロ","lines":[{"chords":"Em7  G/B","lyric":""},{"chords":"Em7","lyric":"歌詞"}]}]}\n\n・ページに書かれている内容のみ、推測や創作は厳禁\n・全セクション・全歌詞を漏らさない';
-    const result=await callGemini([{role:'user',content:prompt}],'Use Google Search to access the chord sheet page. Extract chord and lyric data EXACTLY as written on the actual page. NEVER invent, summarize, or paraphrase content. Return ONLY complete valid JSON.',true);
+    let prompt;
+    if(targetUrl){
+      prompt='次のコード譜ページにアクセスして、その内容を忠実にJSON化してください: '+targetUrl
+        +'\n\n出力形式（マークダウン不要、JSONのみ）:\n'
+        +'{"capo":0,"sections":[{"label":"イントロ","lines":[{"chords":"Em7  G/B","lyric":""},{"chords":"Em7","lyric":"歌詞"}]}]}\n\n'
+        +'重要なルール:\n'
+        +'・ページに書かれている内容のみを反映、推測や創作は厳禁\n'
+        +'・コードは1行、その下に対応する歌詞行のペアで記録\n'
+        +'・歌詞のみの行は chords を空文字列に\n'
+        +'・コードのみの行（イントロ等）は lyric を空文字列に\n'
+        +'・全セクション（イントロ・Aメロ・サビ・アウトロ等）と全歌詞を漏らさない\n'
+        +'・繰り返し記号は展開せずそのままセクションラベルに記録\n'
+        +'・カポ情報があれば capo に整数で（なければ0）';
+    } else {
+      prompt='「'+songInfo.title+'」'+(songInfo.artist?' '+songInfo.artist:'')
+        +'のギターコード譜を ja.chordwiki.org で検索し、'
+        +'見つかったページの内容を忠実にJSON化してください。\n\n'
+        +'出力形式（マークダウン不要、JSONのみ）:\n'
+        +'{"capo":0,"sections":[{"label":"イントロ","lines":[{"chords":"Em7  G/B","lyric":""},{"chords":"Em7","lyric":"歌詞"}]}]}\n\n'
+        +'・ページに書かれている内容のみ、推測や創作は厳禁\n・全セクション・全歌詞を漏らさない';
+    }
+
+    const result=await callGemini(
+      [{role:'user',content:prompt}],
+      'Use Google Search to access the chord sheet page. Extract chord and lyric data EXACTLY as written on the actual page. NEVER invent, summarize, or paraphrase content. Return ONLY complete valid JSON.',
+      true
+    );
+
     let data=null;
     const txt=result.text.replace(/```json/g,'').replace(/```/g,'').trim();
     try{data=JSON.parse(txt);}catch{}
     if(!data){const s=txt.indexOf('{'),e=txt.lastIndexOf('}');if(s!==-1&&e>s)try{data=JSON.parse(txt.slice(s,e+1));}catch{}}
+
     if(!data||!data.sections||data.sections.length===0){
       const q2=encodeURIComponent(songInfo.title+' '+songInfo.artist);
-      document.getElementById('confirm-error').innerHTML='⚠ コード譜を取得できませんでした。<br><a href="https://ja.chordwiki.org/search.html?q='+q2+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a>';
+      document.getElementById('confirm-error').innerHTML=
+        '⚠ コード譜を取得できませんでした。'
+        +'<br><a href="https://ja.chordwiki.org/search.html?q='+q2+'" target="_blank" style="color:var(--gold)">→ ChordWikiで検索 ↗</a>'
+        +'';
       showScreen('confirm');return;
     }
-    currentChordData={capo:data.capo||0,sections:data.sections};
+
+    currentChordData={capo:data.capo||0, sections:data.sections};
     const sourceUri=targetUrl||(result.sources&&result.sources[0]&&result.sources[0].uri)||'';
     currentSources={sources:[{uri:sourceUri,title:sourceUri.includes('chordwiki')?'ChordWiki':'参照元'}],searchQueries:[]};
-    isViewingFavorite=false;renderDisplay(currentChordData,currentSources);showScreen('display');
-  }catch(e){document.getElementById('confirm-error').textContent='エラー: '+e.message;showScreen('confirm');}
+    isViewingFavorite=false;
+    renderDisplay(currentChordData,currentSources);
+    showScreen('display');
+  }catch(e){
+    document.getElementById('confirm-error').textContent='エラー: '+e.message;
+    showScreen('confirm');
+  }
 }
+
 
 async function doReroll(){
   if(!songInfo)return;
@@ -833,16 +1118,38 @@ async function doReroll(){
   document.getElementById('loading-sub').textContent=songInfo.title+' / '+songInfo.artist;
   showScreen('loading');
   try{
-    const prompt='「'+songInfo.title+'」('+songInfo.artist+')のギターコード譜を別のコードサイトを参照して取得してください。先ほどと異なるソースや解釈のコードを探してください。以下のJSONのみで返してください（マークダウン不要）:\n{"capo":0,"sections":[{"label":"セクション名","lines":[{"chords":"Em  G  D  C","lyric":"歌詞の行"}]}]}\n- capo: カポフレット番号（カポなしは0）\n- 全セクション・全歌詞を含めること\n- JSONを最後まで完全に出力すること';
-    const result=await callGemini([{role:'user',content:prompt}],'You are a guitar chord chart assistant. Search the web for guitar chord data from a DIFFERENT source than before. Reply ONLY with complete raw JSON. No markdown.',true);
+    const prompt='「'+songInfo.title+'」('+songInfo.artist+')のギターコード譜を別のコードサイトを参照して取得してください。'
+      +'先ほどと異なるソースや解釈のコードを探してください。'
+      +'以下のJSONのみで返してください（マークダウン不要）:\n'
+      +'{"capo":0,"sections":[{"label":"セクション名","lines":[{"chords":"Em  G  D  C","lyric":"歌詞の行"}]}]}\n'
+      +'- capo: カポフレット番号（カポなしは0）\n'
+      +'- 全セクション・全歌詞を含めること\n'
+      +'- JSONを最後まで完全に出力すること';
+    const result=await callGemini(
+      [{role:'user',content:prompt}],
+      'You are a guitar chord chart assistant. Search the web for guitar chord data from a DIFFERENT source than before. Reply ONLY with complete raw JSON. No markdown.',
+      true
+    );
     const data=pJSON(result.text);
-    if(!data||!data.sections||data.sections.length===0){showToast('⚠ 取得失敗。もう一度試してください。');showScreen('display');return;}
-    currentChordData=data;currentSources=result;isViewingFavorite=false;
-    renderDisplay(data,result);showScreen('display');showToast('🎲 コードを引き直しました！');
-  }catch(e){showToast('エラー: '+e.message);showScreen('display');}
+    if(!data||!data.sections||data.sections.length===0){
+      showToast('⚠ 取得失敗。もう一度試してください。');
+      showScreen('display');return;
+    }
+    currentChordData=data;
+    currentSources=result;
+    isViewingFavorite=false;
+    renderDisplay(data,result);
+    showScreen('display');
+    showToast('🎲 コードを引き直しました！');
+  }catch(e){
+    showToast('エラー: '+e.message);
+    showScreen('display');
+  }
 }
 
-function renderDisplay(data,result,isSaved=false,skipKeyReset=false){
+// ── Render ────────────────────────────────────────────
+function renderDisplay(data, result, isSaved=false, skipKeyReset=false){
+  // Song info
   document.getElementById('disp-title').textContent=songInfo.title;
   document.getElementById('disp-artist').textContent=songInfo.artist;
   document.getElementById('disp-bpm').textContent=songInfo.bpm?'♩ '+songInfo.bpm+' BPM':'';
@@ -852,20 +1159,38 @@ function renderDisplay(data,result,isSaved=false,skipKeyReset=false){
     const kh=document.getElementById('key-capo-hint');if(kh)kh.textContent='';
   }
   const capoEl=document.getElementById('disp-capo');
-  if(capoEl){if(data.capo&&data.capo>0){capoEl.textContent='🎸 Capo '+data.capo;capoEl.style.display='inline-block';}else capoEl.style.display='none';}
-  const rerollBtn=document.getElementById('reroll-btn');if(rerollBtn)rerollBtn.style.display=isSaved?'none':'';
+  if(capoEl){
+    if(data.capo&&data.capo>0){capoEl.textContent='🎸 Capo '+data.capo;capoEl.style.display='inline-block';}
+    else capoEl.style.display='none';
+  }
+
+  // Action bar
+  const rerollBtn=document.getElementById('reroll-btn');
+  if(rerollBtn) rerollBtn.style.display=isSaved?'none':'';
   updateFavBtn();
-  const sharedBanner=document.getElementById('shared-banner');if(sharedBanner)sharedBanner.style.display=isSaved?'':'none';
+
+  // Shared banner
+  const sharedBanner=document.getElementById('shared-banner');
+  if(sharedBanner) sharedBanner.style.display=isSaved?'':'none';
+
+  // Sources
   const srcDiv=document.getElementById('chord-sources');
   if(!isSaved&&result){
-    const sources=result.sources||[];const searchQueries=result.searchQueries||[];
+    const sources=result.sources||[];
+    const searchQueries=result.searchQueries||[];
     if(sources.length>0){
       const primary=sources[0];
       const hostname=(()=>{try{return new URL(primary.uri).hostname.replace('www.','')}catch{return primary.uri||'不明'}})();
-      const siteLabel=primary.title?primary.title.split(/[\|\-]/)[0].trim().slice(0,20):hostname;
-      let html='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="color:var(--text-dim)">コード出典:</span><a href="'+primary.uri+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#c8a96e22;border:1px solid #c8a96e55;color:var(--gold);font-family:Space Mono,monospace;font-size:11px;padding:3px 10px;border-radius:20px;text-decoration:none;font-weight:700">✓ '+siteLabel+' <span style="opacity:.5">↗</span></a>';
-      if(sources.length>1){html+='<span style="color:var(--text-dim)">+</span>'+sources.slice(1,3).map(s=>{const h=(()=>{try{return new URL(s.uri).hostname.replace('www.','')}catch{return s.uri}})();return'<a href="'+s.uri+'" target="_blank" style="color:var(--text-dim);font-size:11px;text-decoration:underline">'+h+'</a>';}).join(', ');}
-      srcDiv.innerHTML=html+'</div>';srcDiv.style.display='';
+      const siteLabel=(primary.title?primary.title.split(/[\|\-]/)[0].trim().slice(0,20):hostname);
+      let html='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+      html+='<span style="color:var(--text-dim)">コード出典:</span>';
+      html+='<a href="'+primary.uri+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#c8a96e22;border:1px solid #c8a96e55;color:var(--gold);font-family:Space Mono,monospace;font-size:11px;padding:3px 10px;border-radius:20px;text-decoration:none;font-weight:700">✓ '+siteLabel+' <span style="opacity:.5">↗</span></a>';
+      if(sources.length>1){
+        html+='<span style="color:var(--text-dim)">+</span>';
+        html+=sources.slice(1,3).map(s=>{const h=(()=>{try{return new URL(s.uri).hostname.replace('www.','')}catch{return s.uri}})();return '<a href="'+s.uri+'" target="_blank" style="color:var(--text-dim);font-size:11px;text-decoration:underline">'+h+'</a>';}).join(', ');
+      }
+      html+='</div>';
+      srcDiv.innerHTML=html;srcDiv.style.display='';
     }else if(searchQueries.length>0){
       const q=searchQueries[0];
       srcDiv.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="color:var(--text-dim)">⚠ 参照元URL不明 — 検索クエリ:</span><a href="https://www.google.com/search?q='+encodeURIComponent(q)+'" target="_blank" style="color:var(--gold);font-size:11px;text-decoration:underline">'+q+' ↗</a><a href="https://ja.chordwiki.org/search.html?q='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold);font-size:10px;border:1px solid var(--gold-dim);padding:3px 8px;border-radius:12px;text-decoration:none">ChordWikiで確認 ↗</a></div>';
@@ -874,188 +1199,348 @@ function renderDisplay(data,result,isSaved=false,skipKeyReset=false){
       srcDiv.innerHTML='<span style="color:var(--text-dim);font-size:11px">⚠ 参照元不明 — <a href="https://ja.chordwiki.org/search.html?q='+encodeURIComponent(songInfo.title+' '+songInfo.artist)+'" target="_blank" style="color:var(--gold)">ChordWikiで確認 ↗</a></span>';
       srcDiv.style.display='';
     }
-  }else if(isSaved){srcDiv.innerHTML='<span style="color:var(--text-dim);font-size:11px">📌 保存済みコード譜</span>';srcDiv.style.display='';}
-  const inner=document.getElementById('lyrics-inner');inner.innerHTML='';
-  if(data.capo&&data.capo>0){const banner=document.createElement('div');banner.style.cssText='background:#4a2e6e33;border:1px solid #9b6fd455;color:var(--purple);font-family:Space Mono,monospace;font-size:13px;padding:10px 16px;border-radius:6px;margin-bottom:16px';banner.textContent='🎸 Capo '+data.capo+'フレット';inner.appendChild(banner);}
+  }else if(isSaved){
+    srcDiv.innerHTML='<span style="color:var(--text-dim);font-size:11px">📌 保存済みコード譜</span>';
+    srcDiv.style.display='';
+  }
+
+  // Lyrics
+  const inner=document.getElementById('lyrics-inner');
+  inner.innerHTML='';
+  if(data.capo&&data.capo>0){
+    const banner=document.createElement('div');
+    banner.style.cssText='background:#4a2e6e33;border:1px solid #9b6fd455;color:var(--purple);font-family:Space Mono,monospace;font-size:13px;padding:10px 16px;border-radius:6px;margin-bottom:16px';
+    banner.textContent='🎸 Capo '+data.capo+'フレット';
+    inner.appendChild(banner);
+  }
   data.sections.forEach(sec=>{
     const lbl=document.createElement('div');lbl.className='section-label';lbl.textContent=sec.label;inner.appendChild(lbl);
-    (sec.lines||[]).forEach(line=>{const b=document.createElement('div');b.className='line-block';b.innerHTML='<div class="chord-line">'+chordSpans(line.chords||'')+'</div><div class="lyric-line">'+esc(line.lyric||'')+'</div>';inner.appendChild(b);});
+    (sec.lines||[]).forEach(line=>{
+      const b=document.createElement('div');b.className='line-block';
+      b.innerHTML='<div class="chord-line">'+chordSpans(line.chords||'')+'</div><div class="lyric-line">'+esc(line.lyric||'')+'</div>';
+      inner.appendChild(b);
+    });
   });
   const endEl=document.createElement('div');endEl.className='lyrics-end';inner.appendChild(endEl);
-  document.getElementById('lyrics-outer').scrollTop=0;stopScroll();baseSpeed=bpmSpd(songInfo.bpm||120);
+  document.getElementById('lyrics-outer').scrollTop=0;
+  stopScroll();
+  baseSpeed=bpmSpd(songInfo.bpm||120);
 }
 
-function buildChordText(si,cd){
-  const lines=['♩ '+si.title+' / '+si.artist];
-  if(cd.capo&&cd.capo>0)lines.push('🎸 Capo '+cd.capo+'フレット');
+// ── Copy / Print ─────────────────────────────────────
+function buildChordText(si, cd){
+  const lines=[];
+  lines.push('♩ '+si.title+' / '+si.artist);
+  if(cd.capo&&cd.capo>0) lines.push('🎸 Capo '+cd.capo+'フレット');
   lines.push('');
-  (cd.sections||[]).forEach(sec=>{lines.push('【'+sec.label+'】');(sec.lines||[]).forEach(l=>{if(l.chords)lines.push(l.chords);if(l.lyric)lines.push(l.lyric);if(l.chords||l.lyric)lines.push('');});});
+  (cd.sections||[]).forEach(sec=>{
+    lines.push('【'+sec.label+'】');
+    (sec.lines||[]).forEach(l=>{
+      if(l.chords) lines.push(l.chords);
+      if(l.lyric)  lines.push(l.lyric);
+      if(l.chords||l.lyric) lines.push('');
+    });
+  });
   return lines.join('\n');
 }
-function copyAsText(){if(!songInfo||!currentChordData){showToast('コード譜がありません');return;}doCopy(buildChordText(songInfo,currentChordData),'📋 コピーしました！LINEやメモに貼り付けてください');}
-function copyFavoriteText(id){const fav=getFavorites().find(f=>f.id===id);if(!fav)return;doCopy(buildChordText(fav.songInfo,fav.chordData),'📋 コピーしました！');}
-function doCopy(text,msg){
-  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;background:transparent';document.body.appendChild(ta);ta.focus();ta.select();
-  let ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(ta);
-  if(ok)showToast(msg);
-  else if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(()=>showToast(msg)).catch(()=>window.prompt('コピーしてください（Ctrl+A → Ctrl+C）:',text));
-  else window.prompt('コピーしてください（Ctrl+A → Ctrl+C）:',text);
-}
-function printChord(){if(!songInfo||!currentChordData){showToast('コード譜がありません');return;}window.print();}
 
+function copyAsText(){
+  if(!songInfo||!currentChordData){ showToast('コード譜がありません'); return; }
+  doCopy(buildChordText(songInfo, currentChordData), '📋 コピーしました！LINEやメモに貼り付けてください');
+}
+
+function copyFavoriteText(id){
+  const fav=getFavorites().find(f=>f.id===id);
+  if(!fav) return;
+  doCopy(buildChordText(fav.songInfo, fav.chordData), '📋 コピーしました！');
+}
+
+function doCopy(text, msg){
+  // file:// in Chrome: use textarea + execCommand
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.cssText='position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;background:transparent';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok=false;
+  try{ ok=document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  if(ok){
+    showToast(msg);
+  } else if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast(msg)).catch(()=>window.prompt('コピーしてください（Ctrl+A → Ctrl+C）:',text));
+  } else {
+    window.prompt('コピーしてください（Ctrl+A → Ctrl+C）:',text);
+  }
+}
+
+function printChord(){
+  if(!songInfo||!currentChordData){ showToast('コード譜がありません'); return; }
+  window.print();
+}
+
+// ── Favorites ─────────────────────────────────────────
 function getFavorites(){return lsGetJSON('cs_favorites',[])}
 function saveFavorites(favs){lsSetJSON('cs_favorites',favs)}
-function isFavorited(){if(!songInfo)return false;return getFavorites().some(f=>f.songInfo.title===songInfo.title&&f.songInfo.artist===songInfo.artist);}
-function updateFavBtn(){const btn=document.getElementById('fav-btn');if(!btn)return;if(isFavorited()){btn.textContent='★ お気に入り済み';btn.classList.add('fav-saved');}else{btn.textContent='☆ お気に入りに追加';btn.classList.remove('fav-saved');}}
+
+function isFavorited(){
+  if(!songInfo)return false;
+  return getFavorites().some(f=>f.songInfo.title===songInfo.title&&f.songInfo.artist===songInfo.artist);
+}
+function updateFavBtn(){
+  const btn=document.getElementById('fav-btn');
+  if(!btn)return;
+  if(isFavorited()){
+    btn.textContent='★ お気に入り済み';
+    btn.classList.add('fav-saved');
+  }else{
+    btn.textContent='☆ お気に入りに追加';
+    btn.classList.remove('fav-saved');
+  }
+}
 function toggleFavorite(){
   if(!songInfo||!currentChordData)return;
-  let favs=getFavorites();const idx=favs.findIndex(f=>f.songInfo.title===songInfo.title&&f.songInfo.artist===songInfo.artist);
-  if(idx>=0){favs.splice(idx,1);saveFavorites(favs);updateFavBtn();showToast('お気に入りから削除しました');}
-  else{favs.unshift({id:Date.now(),songInfo:{...songInfo},chordData:{...currentChordData},savedAt:new Date().toLocaleDateString('ja-JP')});saveFavorites(favs);updateFavBtn();showToast('★ お気に入りに追加しました！');}
+  let favs=getFavorites();
+  const idx=favs.findIndex(f=>f.songInfo.title===songInfo.title&&f.songInfo.artist===songInfo.artist);
+  if(idx>=0){
+    favs.splice(idx,1);
+    saveFavorites(favs);
+    updateFavBtn();
+    showToast('お気に入りから削除しました');
+  }else{
+    favs.unshift({id:Date.now(),songInfo:{...songInfo},chordData:{...currentChordData},savedAt:new Date().toLocaleDateString('ja-JP')});
+    saveFavorites(favs);
+    updateFavBtn();
+    showToast('★ お気に入りに追加しました！');
+  }
 }
+
 function showFavorites(){
-  const favs=getFavorites();const list=document.getElementById('fav-list');list.innerHTML='';
-  if(favs.length===0){list.innerHTML='<div class="fav-empty"><div style="font-size:32px">♪</div><div>お気に入りはまだありません</div><div style="font-size:12px;color:var(--text-dim)">コード譜を表示してから ☆ ボタンで保存できます</div></div>';}
-  else{favs.forEach(f=>{const item=document.createElement('div');item.className='fav-item';item.innerHTML='<div class="fav-item-info"><div class="fav-item-title">'+esc(f.songInfo.title)+'</div><div class="fav-item-artist">'+esc(f.songInfo.artist||'')+'</div><div class="fav-item-meta">'+(f.songInfo.bpm?'♩ '+f.songInfo.bpm+' BPM':'')+(f.chordData.capo?'  🎸 Capo '+f.chordData.capo:'')+'  📅 '+f.savedAt+'</div></div><button class="fav-share" onclick="event.stopPropagation();copyFavoriteText('+f.id+')">📋 コピー</button><button class="fav-delete" onclick="event.stopPropagation();deleteFavorite('+f.id+')" title="削除">✕</button>';item.onclick=()=>loadFavorite(f.id);list.appendChild(item);});}
+  const favs=getFavorites();
+  const list=document.getElementById('fav-list');
+  list.innerHTML='';
+  if(favs.length===0){
+    list.innerHTML='<div class="fav-empty"><div style="font-size:32px">♪</div><div>お気に入りはまだありません</div><div style="font-size:12px;color:var(--text-dim)">コード譜を表示してから ☆ ボタンで保存できます</div></div>';
+  }else{
+    favs.forEach(f=>{
+      const item=document.createElement('div');item.className='fav-item';
+      item.innerHTML='<div class="fav-item-info"><div class="fav-item-title">'+esc(f.songInfo.title)+'</div><div class="fav-item-artist">'+esc(f.songInfo.artist||'')+'</div><div class="fav-item-meta">'+(f.songInfo.bpm?'♩ '+f.songInfo.bpm+' BPM':'')+(f.chordData.capo?'  🎸 Capo '+f.chordData.capo:'')+'  📅 '+f.savedAt+'</div></div>'
+        +'<button class="fav-share" onclick="event.stopPropagation();copyFavoriteText('+f.id+')">📋 コピー</button>'
+        +'<button class="fav-delete" onclick="event.stopPropagation();deleteFavorite('+f.id+')" title="削除">✕</button>';
+      item.onclick=()=>loadFavorite(f.id);
+      list.appendChild(item);
+    });
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-favorites').classList.add('active');
   document.getElementById('back-btn').style.display='none';
   document.getElementById('fav-nav-btn').style.display='none';
 }
-function loadFavorite(id){const fav=getFavorites().find(f=>f.id===id);if(!fav)return;songInfo=fav.songInfo;currentChordData=fav.chordData;currentSources=null;isViewingFavorite=true;renderDisplay(fav.chordData,null,true);showScreen('display');}
-function deleteFavorite(id){let favs=getFavorites();favs=favs.filter(f=>f.id!==id);saveFavorites(favs);showFavorites();showToast('削除しました');}
 
+function loadFavorite(id){
+  const fav=getFavorites().find(f=>f.id===id);
+  if(!fav)return;
+  songInfo=fav.songInfo;
+  currentChordData=fav.chordData;
+  currentSources=null;
+  isViewingFavorite=true;
+  renderDisplay(fav.chordData,null,true);
+  showScreen('display');
+}
+
+function deleteFavorite(id){
+  let favs=getFavorites();
+  favs=favs.filter(f=>f.id!==id);
+  saveFavorites(favs);
+  showFavorites();
+  showToast('削除しました');
+}
+
+// ── Share / iPhone ────────────────────────────────────
+function buildShareUrl(songInfoObj,chordDataObj){
+  const payload=JSON.stringify({songInfo:songInfoObj,chordData:chordDataObj});
+  const encoded=btoa(encodeURIComponent(payload));
+  return location.href.split('#')[0]+'#chord='+encoded;
+}
+function shareChord(){
+  if(!songInfo||!currentChordData){showToast('先にコード譜を表示してください');return}
+  const url=buildShareUrl(songInfo,currentChordData);
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('📋 URLをコピーしました！iPhoneのSafariで開いてください');
+  }).catch(()=>{
+    prompt('このURLをコピーしてiPhoneのSafariで開いてください:',url);
+  });
+}
+function shareFavorite(id){
+  const fav=getFavorites().find(f=>f.id===id);
+  if(!fav)return;
+  const url=buildShareUrl(fav.songInfo,fav.chordData);
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('📋 URLをコピーしました！');
+  }).catch(()=>{
+    prompt('このURLをコピーしてiPhoneのSafariで開いてください:',url);
+  });
+}
+
+// ── Scroll ────────────────────────────────────────────
 function toggleScroll(){scrolling?stopScroll():startScroll()}
 let _scrollAccum=0;
 function startScroll(){
   scrolling=true;_scrollAccum=0;
-  const btn=document.getElementById('scroll-toggle');if(btn)btn.textContent='\u23f8 停止';
-  if(animId)clearInterval(animId);
+  const btn=document.getElementById('scroll-toggle');
+  if(btn)btn.textContent='\u23f8 停止';
+  if(animId){clearInterval(animId);}
   animId=setInterval(()=>{
     if(!scrolling){stopScroll();return;}
-    const el=document.getElementById('lyrics-outer');if(!el)return;
+    const el=document.getElementById('lyrics-outer');
+    if(!el)return;
     _scrollAccum+=baseSpeed*speedMult*(1/60);
-    if(_scrollAccum>=1){const px=Math.floor(_scrollAccum);el.scrollTop=el.scrollTop+px;_scrollAccum-=px;}
-    if(el.scrollTop+el.clientHeight>=el.scrollHeight-2)stopScroll();
+    if(_scrollAccum>=1){
+      const px=Math.floor(_scrollAccum);
+      el.scrollTop=el.scrollTop+px;
+      _scrollAccum-=px;
+    }
+    if(el.scrollTop+el.clientHeight>=el.scrollHeight-2){stopScroll();}
   },Math.round(1000/60));
 }
 function stopScroll(){
   scrolling=false;_scrollAccum=0;
-  const btn=document.getElementById('scroll-toggle');if(btn)btn.textContent='\u25b6 自動スクロール';
+  const btn=document.getElementById('scroll-toggle');
+  if(btn)btn.textContent='\u25b6 自動スクロール';
   if(animId){clearInterval(animId);animId=null;}
 }
-function setMult(btn){document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');speedMult=parseFloat(btn.dataset.m);}
-
-// ── Chord Diagram DB ──────────────────────────────────────────
-// frets: [E(6弦=低音), A, D, G, B, e(1弦=高音)]
-// -1=ミュート  0=開放  N=フレット番号
-// baseFret: 図の開始フレット(省略=1)
-// barre: {fret, from(弦index 0=E低音), to(省略=全弦)}
+function tick(){}
+function setMult(btn){
+  document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  speedMult=parseFloat(btn.dataset.m);
+}
+// ── Chord Diagram ─────────────────────────────────────────────
+// frets: [E(low), A, D, G, B, e(high)]  -1=mute  0=open  N=fret
 const CHORD_DB = {
   // ── C ──────────────────────────────────────────────
-  'C':          {frets:[-1,3,2,0,1,0]},
-  'CM7':        {frets:[-1,3,2,0,0,0]},
-  'Cmaj7':      {frets:[-1,3,2,0,0,0]},
-  'CM9':        {frets:[-1,3,2,0,3,0]},
-  'C9':         {frets:[-1,3,2,3,3,-1]},
-  'Cm':         {frets:[-1,3,5,5,4,3],baseFret:3,barre:{fret:3,from:1}},
+  'C':       {frets:[-1,3,2,0,1,0]},
+  'CM7':     {frets:[-1,3,2,0,0,0]},
+  'Cmaj7':   {frets:[-1,3,2,0,0,0]},
+  'CM9':     {frets:[-1,3,2,0,3,0]},
+  'C9':      {frets:[-1,3,2,3,3,-1]},
+  'Cm':      {frets:[-1,3,5,5,4,3],baseFret:3,barre:{fret:3,from:1}},
   // ── D ──────────────────────────────────────────────
-  'D':          {frets:[-1,-1,0,2,3,2]},
-  'Dm':         {frets:[-1,-1,0,2,3,1]},
-  'D7':         {frets:[-1,-1,0,2,1,2]},
-  'D7/F#':      {frets:[2,0,0,2,1,2]},
-  'DM7':        {frets:[-1,-1,0,2,2,2]},
-  'Dmaj7':      {frets:[-1,-1,0,2,2,2]},
-  'D6/F#':      {frets:[2,0,0,2,0,2]},
-  'D/F#':       {frets:[2,0,0,2,3,2]},
-  'Dsus4':      {frets:[-1,-1,0,2,3,3]},
-  'Ddim':       {frets:[-1,-1,0,1,0,1]},
-  // ── E / Eb ─────────────────────────────────────────
-  'E':          {frets:[0,2,2,1,0,0]},
-  'Eb':         {frets:[-1,6,5,3,4,3],baseFret:3},
-  'Em':         {frets:[0,2,2,0,0,0]},
-  'Em7':        {frets:[0,2,2,0,3,0]},
-  'E7':         {frets:[0,2,0,1,0,0]},
+  'D':       {frets:[-1,-1,0,2,3,2]},
+  'Dm':      {frets:[-1,-1,0,2,3,1]},
+  'D7':      {frets:[-1,-1,0,2,1,2]},
+  'D7/F#':   {frets:[2,0,0,2,1,2]},
+  'DM7':     {frets:[-1,-1,0,2,2,2]},
+  'Dmaj7':   {frets:[-1,-1,0,2,2,2]},
+  'D6/F#':   {frets:[2,0,0,2,0,2]},
+  'D/F#':    {frets:[2,0,0,2,3,2]},
+  'Dsus4':   {frets:[-1,-1,0,2,3,3]},
+  // ── E ──────────────────────────────────────────────
+  'E':       {frets:[0,2,2,1,0,0]},
+  'Em':      {frets:[0,2,2,0,0,0]},
+  'Em7':     {frets:[0,2,2,0,3,0]},
+  'E7':      {frets:[0,2,0,1,0,0]},
   // ── F ──────────────────────────────────────────────
-  'F':          {frets:[1,3,3,2,1,1],barre:{fret:1,from:0}},
-  'FM7':        {frets:[-1,-1,3,2,1,0]},
-  'Fmaj7':      {frets:[-1,-1,3,2,1,0]},
-  'F#m7':       {frets:[2,4,4,4,2,2],baseFret:2,barre:{fret:2,from:0}},
-  'F#7':        {frets:[2,4,2,3,2,2],baseFret:2,barre:{fret:2,from:0}},
-  'F#dim':      {frets:[-1,-1,4,5,4,5],baseFret:4},
+  'F':       {frets:[1,3,3,2,1,1],barre:{fret:1,from:0}},
+  'FM7':     {frets:[-1,-1,3,2,1,0]},
+  'F#m7':    {frets:[2,4,4,4,2,2],baseFret:2,barre:{fret:2,from:0}},
+  'F#7':     {frets:[2,4,2,3,2,2],baseFret:2,barre:{fret:2,from:0}},
   // ── G ──────────────────────────────────────────────
-  'G':          {frets:[3,2,0,0,0,3]},
-  'Gm':         {frets:[3,5,5,3,3,3],barre:{fret:3,from:0}},
-  'G7':         {frets:[3,2,0,0,0,1]},
-  'GM7':        {frets:[3,2,0,0,0,2]},
-  'Gmaj7':      {frets:[3,2,0,0,0,2]},
-  'G/B':        {frets:[-1,2,0,0,0,3]},
-  'G/D':        {frets:[-1,-1,0,0,0,3]},
+  'G':       {frets:[3,2,0,0,0,3]},
+  'Gm':      {frets:[3,5,5,3,3,3],barre:{fret:3,from:0}},
+  'G7':      {frets:[3,2,0,0,0,1]},
+  'GM7':     {frets:[3,2,0,0,0,2]},
+  'Gmaj7':   {frets:[3,2,0,0,0,2]},
+  'G/B':     {frets:[-1,2,0,0,0,3]},
+  'G/D':     {frets:[-1,-1,0,0,0,3]},
   // ── A ──────────────────────────────────────────────
-  'A':          {frets:[-1,0,2,2,2,0]},
-  'Am':         {frets:[-1,0,2,2,1,0]},
-  'Am7':        {frets:[-1,0,2,0,1,0]},
+  'A':       {frets:[-1,0,2,2,2,0]},
+  'Am':      {frets:[-1,0,2,2,1,0]},
+  'Am7':     {frets:[-1,0,2,0,1,0]},
   'Am7(b5)/Eb': {frets:[-1,-1,1,2,1,0]},
-  'A7':         {frets:[-1,0,2,0,2,0]},
-  'AM7':        {frets:[-1,0,2,1,2,0]},
+  'A7':      {frets:[-1,0,2,0,2,0]},
+  'AM7':     {frets:[-1,0,2,1,2,0]},
   // ── B ──────────────────────────────────────────────
-  'B':          {frets:[-1,2,4,4,4,2],baseFret:2,barre:{fret:2,from:1}},
-  'Bm':         {frets:[-1,2,4,4,3,2],baseFret:2,barre:{fret:2,from:1}},
-  'Bm7':        {frets:[-1,2,4,2,3,2],baseFret:2,barre:{fret:2,from:1}},
-  'B7':         {frets:[-1,2,1,2,0,2]},
-  'B/D#':       {frets:[6,-1,4,4,4,-1],baseFret:4,barre:{fret:4,from:1,to:3}},
-  // ── C# ─────────────────────────────────────────────
-  'C#m':        {frets:[4,4,6,6,5,4],baseFret:4,barre:{fret:4,from:0}},
+  'B':       {frets:[-1,2,4,4,4,2],baseFret:2,barre:{fret:2,from:1}},
+  'Bm':      {frets:[-1,2,4,4,3,2],baseFret:2,barre:{fret:2,from:1}},
+  'Bm7':     {frets:[-1,2,4,2,3,2],baseFret:2,barre:{fret:2,from:1}},
+  'B7':      {frets:[-1,2,1,2,0,2]},
+  // ── 追加コード ─────────────────────────────────────
+  'B/D#':  {frets:[-1,2,4,4,4,2]},
+  'C#m':   {frets:[4,4,6,6,5,4],baseFret:4,barre:{fret:4,from:0}},
+  'F#dim': {frets:[-1,-1,3,2,3,2]},
+  'Fmaj7': {frets:[1,3,3,2,1,0],barre:{fret:1,from:0}},
 };
 
-function buildChordSVG(name){
-  const ch=CHORD_DB[name];if(!ch)return null;
-  const W=218,H=168,pl=42,pt=16,sg=26,fg=42,dr=9;
-  const strings=6,fretCount=4;
-  const base=ch.baseFret||1;const showNut=base===1;
+function buildChordSVG(name) {
+  const ch = CHORD_DB[name];
+  if (!ch) return null;
+  // Horizontal layout: nut on LEFT, strings run left→right, E(low) at top, e(high) at bottom
+  const W=218, H=168, pl=42, pt=16, sg=26, fg=42, dr=9;
+  const strings=6, fretCount=4;
+  const base=ch.baseFret||1;
+  const showNut=base===1;
+  // String order: e(1st) at TOP, E(6th) at BOTTOM
   const strLabels=['e','B','G','D','A','E'];
+  // strRow(i): i=0→E(bottom), i=5→e(top)  =>  row = strings-1-i
   const strY=i=>pt+(strings-1-i)*sg;
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
   s+=`<rect width="${W}" height="${H}" fill="#1a1208" rx="12"/>`;
+  // String lines (horizontal) + labels  (strLabels[0]='e' = top row)
   for(let i=0;i<strings;i++){
-    const y=pt+i*sg;
+    const y=pt+i*sg; // i=0→e(top), i=5→E(bottom)
     s+=`<text x="6" y="${y+4}" fill="#c8a96e66" font-size="10" font-family="monospace">${strLabels[i]}</text>`;
     s+=`<line x1="${pl}" y1="${y}" x2="${pl+fretCount*fg}" y2="${y}" stroke="#c8a96e44" stroke-width="1.5"/>`;
   }
+  // Fret lines (vertical)
   for(let f=0;f<=fretCount;f++){
-    const x=pl+f*fg,isNut=showNut&&f===0;
+    const x=pl+f*fg;
+    const isNut=showNut&&f===0;
     s+=`<line x1="${x}" y1="${pt}" x2="${x}" y2="${pt+(strings-1)*sg}" stroke="${isNut?'#e8e0d0':'#c8a96e33'}" stroke-width="${isNut?4:1.5}"/>`;
   }
-  if(!showNut)s+=`<text x="${pl+fg*0.45}" y="${pt+(strings-1)*sg+16}" fill="#c8a96e" font-size="11" font-family="monospace" text-anchor="middle">${base}fr</text>`;
+  // Fret number if not at nut
+  if(!showNut){
+    s+=`<text x="${pl+fg*0.45}" y="${pt+(strings-1)*sg+16}" fill="#c8a96e" font-size="11" font-family="monospace" text-anchor="middle">${base}fr</text>`;
+  }
+  // Barre: from/to are frets[] indices (0=E,5=e), map to row via strY
   if(ch.barre){
     const bx=pl+(ch.barre.fret-base+0.5)*fg;
     const fromRow=strY(ch.barre.from||0);
     const toRow=strY(ch.barre.to!==undefined?ch.barre.to:strings-1);
-    const by1=Math.min(fromRow,toRow),by2=Math.max(fromRow,toRow);
+    const by1=Math.min(fromRow,toRow);
+    const by2=Math.max(fromRow,toRow);
     s+=`<rect x="${bx-dr}" y="${by1-dr*0.5}" width="${dr*2}" height="${by2-by1+dr}" fill="#c8a96e" rx="${dr}"/>`;
   }
+  // X/O markers
   for(let i=0;i<strings;i++){
-    const y=strY(i),fret=ch.frets[i],mx=pl-13;
-    if(fret<0){const d=4;s+=`<line x1="${mx-d}" y1="${y-d}" x2="${mx+d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/><line x1="${mx+d}" y1="${y-d}" x2="${mx-d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;}
-    else if(fret===0)s+=`<circle cx="${mx}" cy="${y}" r="5" fill="none" stroke="#c8a96e88" stroke-width="1.5"/>`;
+    const y=strY(i), fret=ch.frets[i], mx=pl-13;
+    if(fret<0){
+      const d=4;
+      s+=`<line x1="${mx-d}" y1="${y-d}" x2="${mx+d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+      s+=`<line x1="${mx+d}" y1="${y-d}" x2="${mx-d}" y2="${y+d}" stroke="#e88060" stroke-width="2" stroke-linecap="round"/>`;
+    } else if(fret===0){
+      s+=`<circle cx="${mx}" cy="${y}" r="5" fill="none" stroke="#c8a96e88" stroke-width="1.5"/>`;
+    }
   }
+  // Finger dots
   for(let i=0;i<strings;i++){
     const fret=ch.frets[i];
     if(fret>0){
-      const x=pl+(fret-base+0.5)*fg,y=strY(i);
+      const x=pl+(fret-base+0.5)*fg, y=strY(i);
       const barre=ch.barre;
       const cov=barre&&barre.fret===fret&&i>=(barre.from||0)&&i<=(barre.to!==undefined?barre.to:strings-1);
-      if(!cov)s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
+      if(!cov) s+=`<circle cx="${x}" cy="${y}" r="${dr}" fill="#c8a96e"/>`;
     }
   }
-  s+='</svg>';return s;
+  s+='</svg>';
+  return s;
 }
 
 function chordSpans(text){
-  if(!text)return'';
+  if(!text) return '';
   return text.split(/(\s+)/).map(part=>{
-    if(/^\s+$/.test(part))return part;
-    return`<span class="chord-tap" onclick="showChordDiagram('${part}')">${esc(part)}</span>`;
+    if(/^\s+$/.test(part)) return part;
+    return `<span class="chord-tap" onclick="showChordDiagram('${part}')">${esc(part)}</span>`;
   }).join('');
 }
 
@@ -1063,16 +1548,19 @@ function showChordDiagram(name){
   document.getElementById('chord-modal-name').textContent=name;
   const svg=buildChordSVG(name);
   const diagramEl=document.getElementById('chord-modal-diagram');
-  if(svg)diagramEl.innerHTML=svg;
-  else diagramEl.innerHTML='<div class="chord-modal-nodata">コード図データなし</div>';
+  if(svg){
+    diagramEl.innerHTML=svg;
+  } else {
+    diagramEl.innerHTML='<div class="chord-modal-nodata">コード図データなし</div>';
+  }
   document.getElementById('chord-modal').classList.add('show');
 }
 function closeChordModal(e){
   if(!e||e.target===document.getElementById('chord-modal')||e.type==='click')
     document.getElementById('chord-modal').classList.remove('show');
 }
-</script>
 
+</script>
 <div id="chord-modal" onclick="closeChordModal(event)">
   <div class="chord-modal-card" onclick="event.stopPropagation()">
     <div class="chord-modal-name" id="chord-modal-name"></div>
@@ -1081,4 +1569,110 @@ function closeChordModal(e){
   </div>
 </div>
 </body>
-</html>
+</html>function parseChordWikiPage(doc){
+  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe').forEach(el=>el.remove());
+  const bodyText=doc.body.textContent||'';
+
+  let capo=0;
+  const capoMatch=bodyText.match(/[Cc]apo[^0-9]*([0-9]+)/);
+  if(capoMatch) capo=parseInt(capoMatch[1]);
+
+  // Priority 1: textarea with ChordPro [chord] format
+  const textarea=doc.querySelector('textarea');
+  if(textarea){
+    const src=textarea.value||textarea.textContent||'';
+    if(src.includes('[')) return parseChordPro(src, capo);
+  }
+
+  // Priority 2: DOM-based extraction (ChordWiki renders chords as spans)
+  const chordSpans=doc.querySelectorAll('[class*="chord"],[class*="Chord"]');
+  if(chordSpans.length>0){
+    return parseChordWikiDOM(doc, capo);
+  }
+
+  // Priority 3: pre/code block
+  const pre=doc.querySelector('pre,code,.pre');
+  if(pre){
+    const txt=pre.textContent||'';
+    if(txt.length>50){
+      if(txt.includes('[')) return parseChordPro(txt, capo);
+      return parseRenderedChordWiki(txt, capo);
+    }
+  }
+
+  // Priority 4: Full body text
+  if(bodyText.includes('[')) return parseChordPro(bodyText, capo);
+  return parseRenderedChordWiki(bodyText, capo);
+}
+
+function parseChordWikiDOM(doc, capo){
+  const sections=[];
+  let curSection={label:'Verse', lines:[]};
+  const chordArea=doc.querySelector('#chord,#chord_area,.chord_area,#main,pre')||doc.body;
+
+  function walk(node){
+    if(node.nodeType===3){
+      const txt=(node.textContent||'').trim();
+      if(txt) return [{type:'text',value:txt}];
+      return [];
+    }
+    if(node.nodeType!==1) return [];
+    const tag=node.tagName.toLowerCase();
+    const cls=(node.className||'').toLowerCase();
+    if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('label')){
+      return [{type:'section',value:node.textContent.trim()}];
+    }
+    if(cls.includes('chord')){
+      return [{type:'chord',value:node.textContent.trim()}];
+    }
+    if(tag==='br'||tag==='hr') return [{type:'br'}];
+    if(/^(div|p|li|tr|td)$/.test(tag)){
+      const children=[].concat(...[...node.childNodes].map(walk));
+      return [...children,{type:'br'}];
+    }
+    return [].concat(...[...node.childNodes].map(walk));
+  }
+
+  const tokens=walk(chordArea);
+  let chordBuf=[], lyricBuf='';
+
+  function flush(){
+    if(chordBuf.length>0||lyricBuf.trim()){
+      curSection.lines.push({chords:chordBuf.join('  '),lyric:lyricBuf.trim()});
+      chordBuf=[];lyricBuf='';
+    }
+  }
+  function pushSection(label){
+    if(curSection.lines.length>0) sections.push(curSection);
+    curSection={label,lines:[]};
+  }
+
+  for(const tok of tokens){
+    if(tok.type==='section'){
+      flush();
+      const lbl=tok.value;
+      if(/(イントロ|intro)/i.test(lbl)) pushSection('イントロ');
+      else if(/(verse|aメロ)/i.test(lbl)) pushSection('Aメロ');
+      else if(/(chorus|サビ)/i.test(lbl)) pushSection('サビ');
+      else if(/(bridge|ブリッジ)/i.test(lbl)) pushSection('ブリッジ');
+      else if(/(outro|アウトロ)/i.test(lbl)) pushSection('アウトロ');
+      else if(lbl.length<20) pushSection(lbl);
+    } else if(tok.type==='chord'){
+      if(lyricBuf.trim()&&chordBuf.length===0){ flush(); }
+      chordBuf.push(tok.value);
+    } else if(tok.type==='text'){
+      lyricBuf+=tok.value;
+    } else if(tok.type==='br'){
+      flush();
+    }
+  }
+  flush();
+  if(curSection.lines.length>0) sections.push(curSection);
+
+  if(sections.length===0||sections.every(s=>s.lines.length===0)){
+    return parseRenderedChordWiki(doc.body.textContent||'', capo);
+  }
+  return {capo, sections:sections.filter(s=>s.lines.length>0)};
+}
+
+
