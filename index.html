@@ -281,6 +281,7 @@ select option{background:#1a1410}
       <button class="action-btn" id="print-btn" onclick="printChord()">🖨️ 印刷/PDF保存</button>
     </div>
     <div id="chord-sources"></div>
+    <div style="padding:0 24px 4px" id="debug-btn-wrap"><button class="btn-ghost btn-sm" onclick="showDebugInfo()">🔍 取得デバッグ情報</button></div>
     <div class="lyrics-outer" id="lyrics-outer">
       <div class="lyrics-inner" id="lyrics-inner"></div>
     </div>
@@ -751,12 +752,23 @@ async function doFetchUrl(){
     let chordData=extractChordDataFromDOM(doc,capo,site.key);
     const gotAnyChord=chordData&&chordData.sections&&chordData.sections.some(s=>s.lines.some(l=>l.chords&&l.chords.trim()));
 
+    // ── デバッグ情報を保持（失敗時に表示） ──
+    window._csLastDebug={
+      url, htmlLen:html.length,
+      sectionsCount:chordData?(chordData.sections||[]).length:0,
+      gotAnyChord,
+      sampleChords:chordData?(chordData.sections||[]).flatMap(s=>s.lines.map(l=>l.chords).filter(Boolean)).slice(0,5):[],
+      sampleLyrics:chordData?(chordData.sections||[]).flatMap(s=>s.lines.map(l=>l.lyric).filter(Boolean)).slice(0,3):[],
+      bodyTextSample:bodyText.slice(0,300)
+    };
+
     // ── DOM解析失敗（コード0件を含む） → Geminiフォールバックへ ──
     if(!chordData||!chordData.sections||chordData.sections.length===0||!gotAnyChord){
       document.getElementById('loading-sub').textContent='コードが検出できず。AIで再解析しています...';
       const ok=await fetchViaGeminiFallback(url,site);
       if(ok)return;
-      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました（コードを検出できませんでした）。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>';
+      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました（コードを検出できませんでした）。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>'
+        +'<br><button class="btn-ghost btn-sm" style="margin-top:8px" onclick="showDebugInfo()">🔍 デバッグ情報を表示</button>';
       showScreen('search');return;
     }
 
@@ -773,6 +785,20 @@ async function doFetchUrl(){
     renderDisplay(chordData,currentSources);showScreen('display');showToast('✓ 取得・登録しました');
   }catch(e){document.getElementById('search-error').textContent='エラー: '+e.message;showScreen('search');}
   finally{btn.disabled=false;btn.textContent='🔗 URLから取得';}
+}
+
+function showDebugInfo(){
+  const d=window._csLastDebug;
+  if(!d){alert('デバッグ情報がありません');return;}
+  const msg='URL: '+d.url
+    +'\nHTML長: '+d.htmlLen
+    +'\nセクション数: '+d.sectionsCount
+    +'\nコード検出: '+(d.gotAnyChord?'あり':'なし')
+    +'\n\n検出コード例:\n'+(d.sampleChords.join('\n')||'(なし)')
+    +'\n\n検出歌詞例:\n'+(d.sampleLyrics.join('\n')||'(なし)')
+    +'\n\nbody先頭300文字:\n'+d.bodyTextSample;
+  console.log(msg);
+  alert(msg);
 }
 
 // HTML直接取得・DOM解析が両方失敗した場合、Geminiにページ内容の取得とJSON化を任せる
