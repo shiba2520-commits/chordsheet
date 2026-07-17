@@ -749,13 +749,14 @@ async function doFetchUrl(){
     if(bpmMatch)bpm=parseInt(bpmMatch[1]);
 
     let chordData=extractChordDataFromDOM(doc,capo,site.key);
+    const gotAnyChord=chordData&&chordData.sections&&chordData.sections.some(s=>s.lines.some(l=>l.chords&&l.chords.trim()));
 
-    // ── DOM解析失敗 → Geminiフォールバックへ ──
-    if(!chordData||!chordData.sections||chordData.sections.length===0){
-      document.getElementById('loading-sub').textContent='通常解析に失敗。AIで再解析しています...';
+    // ── DOM解析失敗（コード0件を含む） → Geminiフォールバックへ ──
+    if(!chordData||!chordData.sections||chordData.sections.length===0||!gotAnyChord){
+      document.getElementById('loading-sub').textContent='コードが検出できず。AIで再解析しています...';
       const ok=await fetchViaGeminiFallback(url,site);
       if(ok)return;
-      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>';
+      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました（コードを検出できませんでした）。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>';
       showScreen('search');return;
     }
 
@@ -825,6 +826,9 @@ async function fetchViaGeminiFallback(url,site){
 function extractChordDataFromDOM(doc,capo,siteKey){
   doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style').forEach(el=>el.remove());
 
+  // ── ルビ（ふりがな）除去: <rt>/<rp>タグの中身を本文から除く ──
+  doc.querySelectorAll('rt,rp').forEach(el=>el.remove());
+
   // ── ChordPro形式のtextarea（ChordWiki等） ──
   const textarea=doc.querySelector('textarea');
   if(textarea){
@@ -840,16 +844,19 @@ function extractChordDataFromDOM(doc,capo,siteKey){
     if(ufResult&&ufResult.sections&&ufResult.sections.length>0)return ufResult;
   }
 
-  // ── 汎用DOM抽出（クラス名に'chord'を含む要素をコードとみなす） ──
+  // ── 汎用DOM抽出（クラス名に'chord'を含む要素、または単独コードトークンをコードとみなす） ──
   const sections=[];let curSection={label:'',lines:[]};let chordBuf=[],lyricBuf='';
   function flush(){if(chordBuf.length>0||lyricBuf.trim()){curSection.lines.push({chords:chordBuf.join('  '),lyric:lyricBuf.trim()});chordBuf=[];lyricBuf='';}}
   function pushSection(label){flush();if(curSection.lines.length>0)sections.push(curSection);curSection={label,lines:[]};}
+  // 単独コードトークン判定（例: Em7, F#dim, B/D#, C#m など）
+  const soloChordRe=new RegExp('^[A-G][#b]?(?:m|maj|min|sus|aug|dim|add|M)?[0-9]{0,2}(?:\\([^)]+\\))?(?:/[A-G][#b]?)?$');
   function walkNode(node){
     if(node.nodeType===3){const txt=node.textContent||'';const parts=txt.split('\n');for(let i=0;i<parts.length;i++){if(i>0)flush();if(parts[i].trim())lyricBuf+=parts[i];}return;}
     if(node.nodeType!==1)return;
     const tag=node.tagName.toLowerCase();const cls=(node.className||'').toLowerCase();const txt=node.textContent.trim();
-    if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('block-title')){const sec=normalizeSection(txt);if(txt.length<30){pushSection(sec);return;}}
-    if(/^[A-G][#b]?/.test(txt)&&txt.length<15&&(cls.includes('chord')||tag==='span')){chordBuf.push(txt);return;}
+    if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('block-title')||cls.includes('midashi')){const sec=normalizeSection(txt);if(txt.length<30){pushSection(sec);return;}}
+    // クラス名に'chord'を含む要素、またはspan/b/strongで中身が単独コードトークンならコードとみなす
+    if(txt.length<15&&soloChordRe.test(txt)&&(cls.includes('chord')||/^(span|b|strong|em)$/.test(tag))){chordBuf.push(txt);return;}
     if(tag==='br'){flush();return;}
     if(/^(div|p|li|tr|td|section|article)$/.test(tag)){for(const child of node.childNodes)walkNode(child);flush();return;}
     for(const child of node.childNodes)walkNode(child);
@@ -859,9 +866,14 @@ function extractChordDataFromDOM(doc,capo,siteKey){
   flush();if(curSection.lines.length>0)sections.push(curSection);
   let cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
 
-  // ── DOM抽出で何も取れなかった場合: プレーンテキストのコード行/歌詞行パターンで再試行 ──
-  if(cleaned.length===0){
-    return parsePastedChordSheet(doc.body.textContent||'',capo);
+  // ── DOM抽出でコードが1つも取れなかった場合: プレーンテキストのコード行/歌詞行パターンで再試行 ──
+  const hasAnyChord=cleaned.some(s=>s.lines.some(l=>l.chords));
+  if(cleaned.length===0||!hasAnyChord){
+    const textResult=parsePastedChordSheet(doc.body.textContent||'',capo);
+    if(textResult&&textResult.sections&&textResult.sections.some(s=>s.lines.some(l=>l.chords))){
+      return textResult;
+    }
+    if(cleaned.length===0)return textResult;
   }
   if(!cleaned[0].label)cleaned[0].label='イントロ';
   return{capo:capo||0,sections:cleaned};
