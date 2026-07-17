@@ -17,10 +17,13 @@ html,body{height:100%;background:var(--bg);background-image:radial-gradient(elli
 .hdr-btns{display:flex;gap:6px;align-items:center}
 .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;overflow:hidden;animation:fadeIn .4s ease}
 .screen.active{display:flex}
-/* 検索画面: 登録済み曲リストが増えても見切れないよう、上詰め＋縦スクロールにする */
-#screen-search{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:7vh}
-#screen-search>*{flex-shrink:0}
-#library-section{width:100%;max-width:500px;padding-bottom:40px}
+/* 検索画面: 登録済み曲リストが増えても見切れないよう、
+   コード表示画面(.lyrics-outer)と同じ「内側divがスクロールする」構造にする */
+#screen-search{padding:0;justify-content:flex-start}
+#search-scroll{flex:1;min-height:0;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;padding:7vh 20px 28px}
+#search-scroll>*{flex-shrink:0}
+#library-section{width:100%;max-width:500px;padding-bottom:24px}
+#build-tag{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);opacity:.6;padding:12px 0 24px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .hero-jp{display:block;font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(24px,4vw,46px);letter-spacing:.04em}
 .hero-en{display:block;font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(36px,7vw,72px);color:var(--gold);letter-spacing:-.02em;line-height:1}
@@ -170,6 +173,7 @@ select option{background:#1a1410}
   </div>
 
   <div class="screen" id="screen-search">
+    <div id="search-scroll">
     <div style="text-align:center;margin-bottom:8px">
       <span class="hero-jp">コード譜を</span>
       <span class="hero-en">instantly.</span>
@@ -192,6 +196,8 @@ select option{background:#1a1410}
     </div>
     <div id="debug-panel" style="display:none;margin-top:18px;width:100%;max-width:500px;background:#ffffff06;border:1px solid #c8a96e33;border-radius:8px;padding:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid);text-align:left;max-height:240px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></div>
     <div id="library-section" style="margin-top:24px"></div>
+    <div id="build-tag"></div>
+    </div>
   </div>
 
   <div class="screen" id="screen-paste">
@@ -309,8 +315,9 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.5 (登録曲リストのスクロール修正)';
+const CS_BUILD='2026-07-17.6 (スクロール構造変更)';
 console.log('ChordSheet build:',CS_BUILD);
+(function(){const bt=document.getElementById('build-tag');if(bt)bt.textContent='build '+CS_BUILD;})();
 
 let apiKey=lsGet('cs_key');
 let model=lsGet('cs_model','gemini-3-flash-preview');
