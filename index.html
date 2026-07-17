@@ -305,7 +305,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.2 (rinneフレーズ改行対応)';
+const CS_BUILD='2026-07-17.3 (ufret.jp対応)';
 console.log('ChordSheet build:',CS_BUILD);
 
 let apiKey=lsGet('cs_key');
@@ -612,6 +612,9 @@ function normalizeSection(label){
   return label;
 }
 
+// 全角1字≈半角2字幅として文字列の表示幅を数える（コード行は等幅フォント前提の桁位置計算用）
+function jpColWidth(s){let w=0;for(const ch of s){w+=(ch.charCodeAt(0)<=0x7e||/[｡-ﾟ]/.test(ch))?1:2;}return w;}
+
 function parseChordProText(raw,capo){
   const rawLines=raw.replace(/\r/g,'').split('\n');
   const sections=[];
@@ -620,18 +623,32 @@ function parseChordProText(raw,capo){
   const secRe2=new RegExp('^\\[?\\s*('+secWords2+')\\s*\\d*\\s*\\]?$','i');
   for(const line of rawLines){
     const t=line.trim();
-    if(!t)continue;
+    if(!t){
+      // 空行=段落区切り: ラベルなしセクションとして分割（表示上は段落の間隔になる）
+      if(cur.lines.length>0){sections.push(cur);cur={label:'',lines:[]};}
+      continue;
+    }
     const secM=t.match(secRe2)||t.match(/\{(?:start_of_|comment:?)\s*([^}]+)\}/i);
     if(secM){if(cur.lines.length>0)sections.push(cur);cur={label:normalizeSection(secM[1]),lines:[]};continue;}
+    // [コード]歌詞 の並びを解析し、コードを対応する歌詞の真上の桁位置に配置する
     const chordRe2=new RegExp('\\[([^\\]]+)\\]([^\\[]*)','g');
-    const chords=[];let lyric='';let m2,hasChord=false;
-    while((m2=chordRe2.exec(t))!==null){hasChord=true;chords.push(m2[1]);lyric+=m2[2];}
+    let chordLine='',lyricLine=(t.match(/^[^\[]*/)||[''])[0];
+    let m2,hasChord=false;
+    while((m2=chordRe2.exec(t))!==null){
+      hasChord=true;
+      const pos=jpColWidth(lyricLine);
+      if(chordLine.length<pos)chordLine+=' '.repeat(pos-chordLine.length);
+      else if(chordLine)chordLine+='  ';
+      chordLine+=m2[1];
+      lyricLine+=m2[2];
+    }
     if(!hasChord)cur.lines.push({chords:'',lyric:t});
-    else cur.lines.push({chords:chords.join('  '),lyric:lyric.trim()});
+    else cur.lines.push({chords:chordLine,lyric:lyricLine.replace(/[\s　]+$/,'').replace(/^[\s　]+$/,'')});
   }
   if(cur.lines.length>0)sections.push(cur);
   if(sections.length===0)return null;
-  if(!sections[0].label)sections[0].label='Verse';
+  // 先頭セクションが無ラベルなら推定: 歌詞が一切なければイントロ、あればVerse
+  if(!sections[0].label)sections[0].label=sections[0].lines.every(l=>!l.lyric)?'イントロ':'Verse';
   return{capo:capo||0,sections};
 }
 
@@ -696,7 +713,7 @@ async function fetchWithProxy(url){
 function detectChordSite(url){
   const h=(()=>{try{return new URL(url).hostname}catch{return ''}})();
   if(/chordwiki\.org/i.test(h))return{key:'chordwiki',label:'ChordWiki'};
-  if(/u-fret\.com/i.test(h))return{key:'ufret',label:'U-フレット'};
+  if(/ufret\.jp|u-fret\.com/i.test(h))return{key:'ufret',label:'U-フレット'};
   if(/chord-rinne\.jp/i.test(h))return{key:'rinne',label:'リンネのコードブック'};
   return{key:'generic',label:h||'外部サイト'};
 }
@@ -757,6 +774,18 @@ async function doFetchUrl(){
     let bpm=null;
     const bpmMatch=bodyText.match(/BPM[：:\s]*([0-9]+)/i);
     if(bpmMatch)bpm=parseInt(bpmMatch[1]);
+
+    // ── U-フレット(ufret.jp): メタ情報はページ内JS変数とカポ属性から取得 ──
+    if(site.key==='ufret'){
+      const scripts=[...doc.querySelectorAll('script')].map(s=>s.textContent||'').join('\n');
+      const tm=scripts.match(/song_name\s*=\s*'([^']+)'/);
+      if(tm)pageTitle=tm[1].slice(0,80);
+      const am=scripts.match(/artist_name\s*=\s*'([^']+)'/);
+      if(am)artist=am[1].slice(0,40);
+      capo=0;
+      const cEl=doc.querySelector('#my-chord-data');
+      if(cEl)capo=parseInt(cEl.getAttribute('capo'))||0;
+    }
 
     // ── リンネのコードブック(chord-rinne.jp): メタ情報は固定のDOM構造から正確に取得 ──
     if(site.key==='rinne'){
@@ -921,6 +950,13 @@ function extractChordDataFromDOM(doc,capo,siteKey){
     if(rn&&rn.sections&&rn.sections.length>0)return rn;
   }
 
+  // ── U-フレット専用: コード譜はページ内JS変数 ufret_chord_datas にChordPro形式で埋め込まれている。
+  //    DOM上の#my-chord-dataは空でJSが動的に構築するため、script除去より前にここで抽出する ──
+  if(siteKey==='ufret'||[...doc.querySelectorAll('script')].some(s=>(s.textContent||'').includes('ufret_chord_datas'))){
+    const uf=extractUfretChordData(doc,capo);
+    if(uf&&uf.sections&&uf.sections.length>0)return uf;
+  }
+
   // ── ナビゲーション・広告・UI要素を除去（リンク集・ジャンルメニュー・SNSボタン等も含む） ──
   doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style,.genre,.category,.menu,.navi,.sidebar,.side,aside,.share,.sns,.pagination,.pager,.related,.recommend,.banner').forEach(el=>el.remove());
 
@@ -1021,7 +1057,24 @@ function extractChordDataFromDOM(doc,capo,siteKey){
   return{capo:capo||0,sections:cleaned};
 }
 
-// U-フレット専用抽出: コードは <span class="chord..."> 系、歌詞はその周辺のテキスト行
+// U-フレット(ufret.jp)専用抽出:
+// ページ内の <script> に var ufret_chord_datas = ["[D]風の強さが[A/C#]ちょっと", ...] という
+// ChordPro形式のJSON配列が埋め込まれているので、それを取り出して既存パーサーに渡す
+function extractUfretChordData(doc,capo){
+  for(const sc of doc.querySelectorAll('script')){
+    const t=sc.textContent||'';
+    if(!t.includes('ufret_chord_datas'))continue;
+    const m=t.match(/ufret_chord_datas\s*=\s*(\[[\s\S]*?\]);/);
+    if(!m)continue;
+    let arr;try{arr=JSON.parse(m[1]);}catch{continue;}
+    if(!Array.isArray(arr)||arr.length===0)continue;
+    const parsed=parseChordProText(arr.join('\n'),capo);
+    if(parsed&&parsed.sections&&parsed.sections.length>0)return parsed;
+  }
+  return null;
+}
+
+// U-フレット旧抽出(フォールバック): コードは <span class="chord..."> 系、歌詞はその周辺のテキスト行
 function extractUfretDOM(doc,capo){
   const sections=[];let curSection={label:'',lines:[]};let chordBuf=[],lyricBuf='';
   function flush(){if(chordBuf.length>0||lyricBuf.trim()){curSection.lines.push({chords:chordBuf.join('  '),lyric:lyricBuf.trim()});chordBuf=[];lyricBuf='';}}
