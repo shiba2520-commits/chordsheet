@@ -305,7 +305,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.3 (ufret.jp対応)';
+const CS_BUILD='2026-07-17.4 (ufretカポ対応)';
 console.log('ChordSheet build:',CS_BUILD);
 
 let apiKey=lsGet('cs_key');
@@ -782,9 +782,8 @@ async function doFetchUrl(){
       if(tm)pageTitle=tm[1].slice(0,80);
       const am=scripts.match(/artist_name\s*=\s*'([^']+)'/);
       if(am)artist=am[1].slice(0,40);
-      capo=0;
-      const cEl=doc.querySelector('#my-chord-data');
-      if(cEl)capo=parseInt(cEl.getAttribute('capo'))||0;
+      const kShift=ufretKeyShift(doc);
+      capo=kShift<0?-kShift:0;
     }
 
     // ── リンネのコードブック(chord-rinne.jp): メタ情報は固定のDOM構造から正確に取得 ──
@@ -1059,8 +1058,20 @@ function extractChordDataFromDOM(doc,capo,siteKey){
 
 // U-フレット(ufret.jp)専用抽出:
 // ページ内の <script> に var ufret_chord_datas = ["[D]風の強さが[A/C#]ちょっと", ...] という
-// ChordPro形式のJSON配列が埋め込まれているので、それを取り出して既存パーサーに渡す
+// ChordPro形式のJSON配列が埋め込まれているので、それを取り出して既存パーサーに渡す。
+// このデータは原曲キー(実音)のコード。サイトの初期表示は input[name=key_scrollbar] の
+// value(=★簡単弾きのおすすめカポ位置)だけ移調した状態なので、同じ移調を適用する:
+//   負の値 = カポ位置（例: -1 → コードを半音下げて「カポ1」表示）
+//   正の値 = 下げチューニング（+1=半音下げ、+2=1音下げ。カポ表示はなし）
+function ufretKeyShift(doc){
+  const kEl=doc.querySelector('input[name="key_scrollbar"]');
+  if(!kEl)return 0;
+  const v=parseInt(kEl.getAttribute('value'));
+  return isNaN(v)?0:v;
+}
 function extractUfretChordData(doc,capo){
+  const shift=ufretKeyShift(doc);
+  const ufCapo=shift<0?-shift:0;
   for(const sc of doc.querySelectorAll('script')){
     const t=sc.textContent||'';
     if(!t.includes('ufret_chord_datas'))continue;
@@ -1068,7 +1079,9 @@ function extractUfretChordData(doc,capo){
     if(!m)continue;
     let arr;try{arr=JSON.parse(m[1]);}catch{continue;}
     if(!Array.isArray(arr)||arr.length===0)continue;
-    const parsed=parseChordProText(arr.join('\n'),capo);
+    let text=arr.join('\n');
+    if(shift)text=text.replace(/\[([^\]]+)\]/g,(mm,c)=>'['+transposeChord(c.trim(),shift)+']');
+    const parsed=parseChordProText(text,ufCapo);
     if(parsed&&parsed.sections&&parsed.sections.length>0)return parsed;
   }
   return null;
