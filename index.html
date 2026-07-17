@@ -850,7 +850,20 @@ async function fetchViaGeminiFallback(url,site){
 }
 
 function extractChordDataFromDOM(doc,capo,siteKey){
-  doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style').forEach(el=>el.remove());
+  // ── ナビゲーション・広告・UI要素を除去（リンク集・ジャンルメニュー・SNSボタン等も含む） ──
+  doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style,.genre,.category,.menu,.navi,.sidebar,.side,aside,.share,.sns,.pagination,.pager,.related,.recommend,.banner').forEach(el=>el.remove());
+
+  // ── リンクの羅列（ジャンルメニュー等）を除去: <a>が密集している親要素ごと消す ──
+  doc.querySelectorAll('a').forEach(a=>{
+    const parent=a.parentElement;
+    if(parent){
+      const linkCount=parent.querySelectorAll('a').length;
+      const totalLen=(parent.textContent||'').length;
+      const linkLen=[...parent.querySelectorAll('a')].reduce((s,x)=>s+((x.textContent||'').length),0);
+      // 親要素の文字の大半がリンクテキストならメニューとみなす
+      if(linkCount>=3&&totalLen>0&&linkLen/totalLen>0.6){parent.remove();}
+    }
+  });
 
   // ── ルビ（ふりがな）除去: <rt>/<rp>タグの中身を本文から除く ──
   doc.querySelectorAll('rt,rp').forEach(el=>el.remove());
@@ -862,7 +875,27 @@ function extractChordDataFromDOM(doc,capo,siteKey){
     if(src.includes('['))return parseChordProText(src,capo);
   }
 
-  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe,noscript').forEach(el=>el.remove());
+  doc.querySelectorAll('script,style,nav,header,footer,.ad,iframe,noscript,a').forEach(el=>{
+    // 単独のコード表記らしきリンクは残す（サイトによってはコードがaタグの場合があるため）
+    const t=(el.textContent||'').trim();
+    const isChordLike=/^[A-G][#b]?(?:m|maj|min|sus|aug|dim|add|M)?[0-9]{0,2}(?:\([^)]+\))?(?:\/[A-G][#b]?)?$/.test(t)&&t.length<15;
+    if(el.tagName.toLowerCase()==='a'&&!isChordLike){el.remove();}
+    else if(el.tagName.toLowerCase()!=='a'){el.remove();}
+  });
+
+  // ── UI文言・注意書きの行をテキストレベルで除外するためのブラックリスト ──
+  const noiseLinePatterns=[
+    /^(洋楽|邦楽|ボカロ|ドラマ・映画|アニメ|劇場.{0,6}アニメ|CM|童謡・民謡|J-?POP|K-?POP)$/,
+    /^Copyright\s*©/i,
+    /^Glider\s*capo/i,
+    /^\(?Transpose\)?$/i,
+    /^かんたん[:：]?$/,
+    /^\(?Easy\)?$/i,
+    /^D-navi/i,
+    /iPhoneで表示が崩れる/,
+    /^原曲BPM/,
+    /全て表示|全体表示|印刷用|この曲を|もっと見る|ランキング|人気の曲/,
+  ];
 
   // ── U-フレット専用: コードはspan.chord、歌詞はテキストノード ──
   if(siteKey==='ufret'){
@@ -876,10 +909,21 @@ function extractChordDataFromDOM(doc,capo,siteKey){
   function pushSection(label){flush();if(curSection.lines.length>0)sections.push(curSection);curSection={label,lines:[]};}
   // 単独コードトークン判定（例: Em7, F#dim, B/D#, C#m など）
   const soloChordRe=new RegExp('^[A-G][#b]?(?:m|maj|min|sus|aug|dim|add|M)?[0-9]{0,2}(?:\\([^)]+\\))?(?:/[A-G][#b]?)?$');
+  function isNoiseLine(t){return noiseLinePatterns.some(p=>p.test(t));}
   function walkNode(node){
-    if(node.nodeType===3){const txt=node.textContent||'';const parts=txt.split('\n');for(let i=0;i<parts.length;i++){if(i>0)flush();if(parts[i].trim())lyricBuf+=parts[i];}return;}
+    if(node.nodeType===3){
+      const txt=node.textContent||'';
+      const parts=txt.split('\n');
+      for(let i=0;i<parts.length;i++){
+        if(i>0)flush();
+        const p=parts[i].trim();
+        if(p&&!isNoiseLine(p))lyricBuf+=parts[i];
+      }
+      return;
+    }
     if(node.nodeType!==1)return;
     const tag=node.tagName.toLowerCase();const cls=(node.className||'').toLowerCase();const txt=node.textContent.trim();
+    if(isNoiseLine(txt))return;
     if(/^h[1-6]$/.test(tag)||cls.includes('section')||cls.includes('block-title')||cls.includes('midashi')){const sec=normalizeSection(txt);if(txt.length<30){pushSection(sec);return;}}
     // クラス名に'chord'を含む要素、またはspan/b/strongで中身が単独コードトークンならコードとみなす
     if(txt.length<15&&soloChordRe.test(txt)&&(cls.includes('chord')||/^(span|b|strong|em)$/.test(tag))){chordBuf.push(txt);return;}
@@ -895,7 +939,8 @@ function extractChordDataFromDOM(doc,capo,siteKey){
   // ── DOM抽出でコードが1つも取れなかった場合: プレーンテキストのコード行/歌詞行パターンで再試行 ──
   const hasAnyChord=cleaned.some(s=>s.lines.some(l=>l.chords));
   if(cleaned.length===0||!hasAnyChord){
-    const textResult=parsePastedChordSheet(doc.body.textContent||'',capo);
+    const rawText=(doc.body.textContent||'').split('\n').filter(line=>!isNoiseLine(line.trim())).join('\n');
+    const textResult=parsePastedChordSheet(rawText,capo);
     if(textResult&&textResult.sections&&textResult.sections.some(s=>s.lines.some(l=>l.chords))){
       return textResult;
     }
