@@ -67,7 +67,7 @@ select option{background:#1a1410}
 .bpm-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:10px;color:var(--gold);background:#c8a96e15;border:1px solid #c8a96e33;border-radius:20px;padding:2px 10px}
 .capo-tag{display:none;font-family:'Space Mono',monospace;font-size:10px;color:var(--purple);background:#9b6fd422;border:1px solid #9b6fd444;border-radius:20px;padding:2px 10px}
 .controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 24px;background:#ffffff04;border-bottom:1px solid #c8a96e10;flex-shrink:0}
-.speed-group{display:flex;align-items:center;gap:5px}
+.speed-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .speed-label{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;margin-right:3px}
 .speed-btn{background:none;border:1px solid #c8a96e44;color:#c8a96e99;font-family:'Space Mono',monospace;font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;transition:all .2s}
 .speed-btn:hover,.speed-btn.active{background:#c8a96e22;border-color:var(--gold);color:var(--gold)}
@@ -275,6 +275,8 @@ select option{background:#1a1410}
     <div class="controls">
       <div class="speed-group">
         <span class="speed-label">速度</span>
+        <button class="speed-btn" data-m="0.2" onclick="setMult(this)">0.4</button>
+        <button class="speed-btn" data-m="0.25" onclick="setMult(this)">0.5</button>
         <button class="speed-btn" data-m="0.3" onclick="setMult(this)">0.6</button>
         <button class="speed-btn" data-m="0.35" onclick="setMult(this)">0.7</button>
         <button class="speed-btn" data-m="0.4" onclick="setMult(this)">0.8</button>
@@ -315,7 +317,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.6 (スクロール構造変更)';
+const CS_BUILD='2026-07-17.7 (速度0.4/0.5追加)';
 console.log('ChordSheet build:',CS_BUILD);
 (function(){const bt=document.getElementById('build-tag');if(bt)bt.textContent='build '+CS_BUILD;})();
 
