@@ -186,6 +186,7 @@ select option{background:#1a1410}
       <button class="btn-ghost" id="url-btn" onclick="doFetchUrl()">🔗 URLから取得</button>
       <button class="btn-ghost" id="paste-btn" onclick="showPasteScreen()" style="margin-top:6px">📋 コピペして登録</button>
     </div>
+    <div id="debug-panel" style="display:none;margin-top:18px;width:100%;max-width:500px;background:#ffffff06;border:1px solid #c8a96e33;border-radius:8px;padding:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid);text-align:left;max-height:240px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></div>
     <div id="library-section" style="margin-top:24px"></div>
   </div>
 
@@ -303,6 +304,9 @@ function lsGet(k,d){try{return localStorage.getItem(k)||d||''}catch{return d||''
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+const CS_BUILD='2026-07-17.1 (rinne対応)';
+console.log('ChordSheet build:',CS_BUILD);
 
 let apiKey=lsGet('cs_key');
 let model=lsGet('cs_model','gemini-3-flash-preview');
@@ -693,6 +697,7 @@ function detectChordSite(url){
   const h=(()=>{try{return new URL(url).hostname}catch{return ''}})();
   if(/chordwiki\.org/i.test(h))return{key:'chordwiki',label:'ChordWiki'};
   if(/u-fret\.com/i.test(h))return{key:'ufret',label:'U-フレット'};
+  if(/chord-rinne\.jp/i.test(h))return{key:'rinne',label:'リンネのコードブック'};
   return{key:'generic',label:h||'外部サイト'};
 }
 
@@ -707,16 +712,20 @@ async function doFetchUrl(){
   document.getElementById('loading-text').textContent=site.label+'から取得中...';
   document.getElementById('loading-sub').textContent='HTMLを取得中...';
   showScreen('loading');
+  hideDebugPanel();
+  window._csLastDebug={build:CS_BUILD,url,site:site.key,stage:'fetch開始',time:new Date().toLocaleString('ja-JP')};
   try{
     let html=null,proxyErr='';
     try{html=await fetchWithProxy(url);}catch(e){proxyErr=e.message;}
 
     // ── HTML取得失敗 → Geminiフォールバックへ ──
     if(!html||html.length<500){
+      Object.assign(window._csLastDebug,{stage:'HTML取得失敗',proxyErr,htmlLen:html?html.length:0});
       document.getElementById('loading-sub').textContent='直接アクセス失敗。AIで取得を試みています...';
       const ok=await fetchViaGeminiFallback(url,site);
       if(ok)return;
       document.getElementById('search-error').innerHTML='アクセス失敗: '+esc(proxyErr||'不明なエラー')+'<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接開く ↗</a>';
+      renderDebugPanel();
       showScreen('search');return;
     }
 
@@ -742,33 +751,52 @@ async function doFetchUrl(){
     if(m)artist=m[1].trim();
 
     let capo=0;
-    const capoMatch=bodyText.match(/[Cc]apo[^0-9]*([0-9]+)/);
+    const capoMatch=bodyText.match(/[Cc]apo[^0-9\n]{0,10}([0-9]{1,2})/);
     if(capoMatch)capo=parseInt(capoMatch[1]);
 
     let bpm=null;
-    const bpmMatch=bodyText.match(/BPM[：: ]*([0-9]+)/i);
+    const bpmMatch=bodyText.match(/BPM[：:\s]*([0-9]+)/i);
     if(bpmMatch)bpm=parseInt(bpmMatch[1]);
+
+    // ── リンネのコードブック(chord-rinne.jp): メタ情報は固定のDOM構造から正確に取得 ──
+    if(site.key==='rinne'){
+      const tEl=doc.querySelector('#bodytitle,p.title');
+      if(tEl&&tEl.textContent.trim())pageTitle=tEl.textContent.trim().slice(0,80);
+      const aEl=doc.querySelector('a.artist');
+      if(aEl&&aEl.textContent.trim())artist=aEl.textContent.trim().slice(0,40);
+      capo=0;
+      const selOpt=doc.querySelector('#key_selectbox option[selected]');
+      if(selOpt){
+        const cm=selOpt.textContent.match(/[Cc]apo\s*([0-9０-９]+)/);
+        if(cm)capo=parseInt(cm[1].replace(/[０-９]/g,d=>String('０１２３４５６７８９'.indexOf(d))))||0;
+      }
+      const bpmEl=doc.querySelector('#id_bpm');
+      if(bpmEl){const bm=bpmEl.textContent.match(/([0-9]+)/);if(bm)bpm=parseInt(bm[1]);}
+    }
+    if(isNaN(capo)||capo<0||capo>12)capo=0;
 
     let chordData=extractChordDataFromDOM(doc,capo,site.key);
     const gotAnyChord=chordData&&chordData.sections&&chordData.sections.some(s=>s.lines.some(l=>l.chords&&l.chords.trim()));
 
     // ── デバッグ情報を保持（失敗時に表示） ──
-    window._csLastDebug={
-      url, htmlLen:html.length,
+    Object.assign(window._csLastDebug,{
+      stage:gotAnyChord?'DOM解析成功':'DOM解析でコード0件',
+      htmlLen:html.length,
+      title:pageTitle,artist,capo,bpm,
       sectionsCount:chordData?(chordData.sections||[]).length:0,
       gotAnyChord,
       sampleChords:chordData?(chordData.sections||[]).flatMap(s=>s.lines.map(l=>l.chords).filter(Boolean)).slice(0,5):[],
       sampleLyrics:chordData?(chordData.sections||[]).flatMap(s=>s.lines.map(l=>l.lyric).filter(Boolean)).slice(0,3):[],
       bodyTextSample:bodyText.slice(0,300)
-    };
+    });
 
     // ── DOM解析失敗（コード0件を含む） → Geminiフォールバックへ ──
     if(!chordData||!chordData.sections||chordData.sections.length===0||!gotAnyChord){
       document.getElementById('loading-sub').textContent='コードが検出できず。AIで再解析しています...';
       const ok=await fetchViaGeminiFallback(url,site);
       if(ok)return;
-      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました（コードを検出できませんでした）。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>'
-        +'<br><button class="btn-ghost btn-sm" style="margin-top:8px" onclick="showDebugInfo()">🔍 デバッグ情報を表示</button>';
+      document.getElementById('search-error').innerHTML='コード譜の解析に失敗しました（コードを検出できませんでした）。<br><a href="'+url+'" target="_blank" style="color:var(--gold)">→ 元ページを直接確認 ↗</a>';
+      renderDebugPanel();
       showScreen('search');return;
     }
 
@@ -783,22 +811,51 @@ async function doFetchUrl(){
     currentSources={sources:[{uri:url,title:site.label}],searchQueries:[]};
     isViewingFavorite=false;
     renderDisplay(chordData,currentSources);showScreen('display');showToast('✓ 取得・登録しました');
-  }catch(e){document.getElementById('search-error').textContent='エラー: '+e.message;showScreen('search');}
+  }catch(e){
+    if(window._csLastDebug)Object.assign(window._csLastDebug,{stage:'例外発生',error:e.message});
+    document.getElementById('search-error').textContent='エラー: '+e.message;
+    renderDebugPanel();
+    showScreen('search');
+  }
   finally{btn.disabled=false;btn.textContent='🔗 URLから取得';}
 }
 
-function showDebugInfo(){
+function buildDebugText(){
   const d=window._csLastDebug;
-  if(!d){alert('デバッグ情報がありません');return;}
-  const msg='URL: '+d.url
-    +'\nHTML長: '+d.htmlLen
-    +'\nセクション数: '+d.sectionsCount
+  if(!d)return null;
+  return 'build: '+(d.build||CS_BUILD)
+    +'\n時刻: '+(d.time||'')
+    +'\nURL: '+(d.url||'')
+    +'\nサイト判定: '+(d.site||'')
+    +'\n段階: '+(d.stage||'')
+    +(d.error?'\nエラー: '+d.error:'')
+    +(d.proxyErr?'\nプロキシエラー: '+d.proxyErr:'')
+    +'\nHTML長: '+(d.htmlLen!=null?d.htmlLen:'-')
+    +'\nタイトル: '+(d.title||'-')+' / アーティスト: '+(d.artist||'-')
+    +'\nカポ: '+(d.capo!=null?d.capo:'-')+' / BPM: '+(d.bpm!=null?d.bpm:'-')
+    +'\nセクション数: '+(d.sectionsCount!=null?d.sectionsCount:'-')
     +'\nコード検出: '+(d.gotAnyChord?'あり':'なし')
-    +'\n\n検出コード例:\n'+(d.sampleChords.join('\n')||'(なし)')
-    +'\n\n検出歌詞例:\n'+(d.sampleLyrics.join('\n')||'(なし)')
-    +'\n\nbody先頭300文字:\n'+d.bodyTextSample;
-  console.log(msg);
-  alert(msg);
+    +'\n\n検出コード例:\n'+((d.sampleChords||[]).join('\n')||'(なし)')
+    +'\n\n検出歌詞例:\n'+((d.sampleLyrics||[]).join('\n')||'(なし)')
+    +'\n\nbody先頭300文字:\n'+(d.bodyTextSample||'');
+}
+function renderDebugPanel(){
+  const el=document.getElementById('debug-panel');
+  if(!el)return;
+  const t=buildDebugText();
+  if(!t){el.style.display='none';return;}
+  el.textContent='🔍 取得デバッグ情報\n'+t;
+  el.style.display='';
+}
+function hideDebugPanel(){
+  const el=document.getElementById('debug-panel');
+  if(el)el.style.display='none';
+}
+function showDebugInfo(){
+  const t=buildDebugText();
+  if(!t){alert('デバッグ情報がありません（このセッションでURL取得を実行していません）');return;}
+  console.log(t);
+  alert(t);
 }
 
 // HTML直接取得・DOM解析が両方失敗した場合、Geminiにページ内容の取得とJSON化を任せる
@@ -816,7 +873,9 @@ async function fetchViaGeminiFallback(url,site){
       +'・全セクション（イントロ・Aメロ・サビ・アウトロ等）と全歌詞を漏らさない\n'
       +'・繰り返し記号は展開せずそのままセクションラベルに記録\n'
       +'・カポ情報があれば capo に整数で（なければ0）\n'
-      +'・タイトル/アーティスト/BPMが不明な場合は空文字列または0でよい';
+      +'・タイトル/アーティスト/BPMが不明な場合は空文字列または0でよい\n'
+      +'・ふりがな・ルビ（漢字の読み仮名）は歌詞に含めない（例:「別べつの人ひと」ではなく「別の人」と書く）\n'
+      +'・サイトのメニュー・UI文言（ジャンル一覧、Transpose、Glider capo、原曲BPM、ランキング、注意書き等）は歌詞に含めない';
     const result=await callGemini(
       [{role:'user',content:prompt}],
       'Access the given URL directly (or via search if needed) and extract chord and lyric data EXACTLY as written on the actual page. NEVER invent, summarize, or paraphrase content. Return ONLY complete valid JSON.',
@@ -826,7 +885,11 @@ async function fetchViaGeminiFallback(url,site){
     const txt=result.text.replace(/```json/g,'').replace(/```/g,'').trim();
     try{data=JSON.parse(txt);}catch{}
     if(!data){const s=txt.indexOf('{'),e=txt.lastIndexOf('}');if(s!==-1&&e>s)try{data=JSON.parse(txt.slice(s,e+1));}catch{}}
-    if(!data||!data.sections||data.sections.length===0)return false;
+    if(!data||!data.sections||data.sections.length===0){
+      if(window._csLastDebug)Object.assign(window._csLastDebug,{stage:'Geminiフォールバック失敗（JSON解析不可）',geminiTextSample:(result.text||'').slice(0,200)});
+      return false;
+    }
+    if(window._csLastDebug)Object.assign(window._csLastDebug,{stage:'Geminiフォールバック成功'});
 
     const chordData={capo:data.capo||0,sections:data.sections};
     const id='song_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
@@ -844,12 +907,20 @@ async function fetchViaGeminiFallback(url,site){
     showToast('✓ AIで解析・登録しました');
     return true;
   }catch(e){
+    if(window._csLastDebug)Object.assign(window._csLastDebug,{stage:'Geminiフォールバック例外',error:e.message});
     console.warn('Geminiフォールバック失敗:',e.message);
     return false;
   }
 }
 
 function extractChordDataFromDOM(doc,capo,siteKey){
+  // ── リンネのコードブック専用: コードは<img alt>属性・歌詞はルビ付き<td>のため、
+  //    テキストベースのクリーンアップより先に固定の表構造から抽出する ──
+  if(siteKey==='rinne'||doc.querySelector('table.lyric img[src*="daia/"]')){
+    const rn=extractRinneDOM(doc,capo);
+    if(rn&&rn.sections&&rn.sections.length>0)return rn;
+  }
+
   // ── ナビゲーション・広告・UI要素を除去（リンク集・ジャンルメニュー・SNSボタン等も含む） ──
   doc.querySelectorAll('nav,header,footer,.ad,iframe,noscript,select,input,button,ul.menu,#ranking,#search-form,.rating,.tag,.breadcrumb,script,style,.genre,.category,.menu,.navi,.sidebar,.side,aside,.share,.sns,.pagination,.pager,.related,.recommend,.banner').forEach(el=>el.remove());
 
@@ -979,6 +1050,69 @@ function extractUfretDOM(doc,capo){
   flush();if(curSection.lines.length>0)sections.push(curSection);
   const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
   if(cleaned.length===0)return null;
+  if(!cleaned[0].label)cleaned[0].label='イントロ';
+  return{capo:capo||0,sections:cleaned};
+}
+
+// リンネのコードブック(chord-rinne.jp)専用抽出:
+// <table class="lyric" id="scrollfield"> 内に
+//   コード行: <tr id="row_N"> — 8拍分の<td>それぞれに <img src="daia/コード名.png" alt="コード名">
+//   歌詞行:   直後の<tr>（idなし） — ルビ付き歌詞(<ruby>漢字<rt>ふりがな</rt></ruby>)、
+//             セクション見出しは <img src="section/amero2.png"> のような画像
+// が交互に並ぶ。コード名はalt属性から取得する（textContentにはコードが一切現れない）。
+function extractRinneDOM(doc,capo){
+  const table=doc.querySelector('table.lyric')||doc.getElementById('scrollfield');
+  if(!table)return null;
+  const SECTION_MAP={intro:'イントロ',amero:'Aメロ',bmero:'Bメロ',cmero:'Cメロ',dmero:'Dメロ',sabi:'サビ',daisabi:'大サビ',kansou:'間奏',outro:'アウトロ',ending:'エンディング',solo:'ソロ'};
+  function mapSection(src){
+    const m=(src||'').match(/section\/([a-z_-]+?)(\d*)\.(?:png|gif|jpg)/i);
+    if(!m)return null;
+    const base=SECTION_MAP[m[1].toLowerCase()]||m[1];
+    return m[2]?base+m[2]:base;
+  }
+  // alt属性のコード名を正規化:
+  //   N=空拍(スキップ) / no1,no2…=リピート記号(スキップ) / NC=N.C.
+  //   ♯→# / XonY→X/Y(分数コード) / 末尾st・-5の後の数字=押さえ方バリエーション表記を除去
+  function normRinneChord(alt){
+    let s=(alt||'').trim();
+    if(!s||s==='N'||/^no\d+$/i.test(s))return null;
+    if(s==='NC')return 'N.C.';
+    s=s.replace(/♯/g,'#').replace(/♭/g,'b');
+    s=s.replace(/(\d)st$/,'$1');
+    s=s.replace(/(-5)\d$/,'$1');
+    const m=s.match(/^(.+?)on([A-G][#b]?)$/);
+    if(m)s=m[1]+'/'+m[2];
+    return s;
+  }
+  const sections=[];let cur={label:'',lines:[]};let pendingChords=null;
+  function pushSection(label){if(cur.lines.length>0||cur.label)sections.push(cur);cur={label:label||'',lines:[]};}
+  function emit(lyric){
+    const chords=pendingChords||'';pendingChords=null;
+    if(!chords&&!lyric)return;
+    cur.lines.push({chords,lyric});
+  }
+  for(const tr of table.querySelectorAll('tr')){
+    const chordImgs=tr.querySelectorAll('img[src*="daia/"]');
+    if(chordImgs.length>0){
+      if(pendingChords!==null)emit('');
+      pendingChords=[...chordImgs].map(im=>normRinneChord(im.getAttribute('alt'))).filter(Boolean).join('  ');
+      continue;
+    }
+    // 歌詞行: 先にセクション画像を検出し、ルビ(rt/rp)と画像を除去してから各<td>のテキストを連結
+    const secImg=tr.querySelector('img[src*="section/"]');
+    const label=secImg?mapSection(secImg.getAttribute('src')):null;
+    const clone=tr.cloneNode(true);
+    clone.querySelectorAll('rt,rp,img').forEach(el=>el.remove());
+    const lyric=[...clone.querySelectorAll('td')]
+      .map(td=>(td.textContent||'').replace(/ /g,' ').replace(/[\s　]+/g,' ').trim())
+      .join('').trim();
+    if(label)pushSection(label);
+    emit(lyric);
+  }
+  if(pendingChords!==null)emit('');
+  if(cur.lines.length>0||cur.label)sections.push(cur);
+  const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
+  if(cleaned.length===0||!cleaned.some(s=>s.lines.some(l=>l.chords)))return null;
   if(!cleaned[0].label)cleaned[0].label='イントロ';
   return{capo:capo||0,sections:cleaned};
 }
