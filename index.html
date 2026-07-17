@@ -305,7 +305,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.1 (rinne対応)';
+const CS_BUILD='2026-07-17.2 (rinneフレーズ改行対応)';
 console.log('ChordSheet build:',CS_BUILD);
 
 let apiKey=lsGet('cs_key');
@@ -1084,32 +1084,88 @@ function extractRinneDOM(doc,capo){
     if(m)s=m[1]+'/'+m[2];
     return s;
   }
-  const sections=[];let cur={label:'',lines:[]};let pendingChords=null;
-  function pushSection(label){if(cur.lines.length>0||cur.label)sections.push(cur);cur={label:label||'',lines:[]};}
-  function emit(lyric){
-    const chords=pendingChords||'';pendingChords=null;
-    if(!chords&&!lyric)return;
-    cur.lines.push({chords,lyric});
+  // 表の1行=2小節(8拍)固定で、歌詞はフレーズと無関係に行送りされるため、
+  // セル(拍)単位のストリームとして再構成する:
+  //   ・全角スペースのみのセル = 休符(フレーズ境界) → ここで改行
+  //   ・セクション画像 → セクション切り替え
+  //   ・息継ぎのない長いフレーズは全角14字相当を超えた行境界で折り返し
+  //   ・コードは「直前までの歌詞の表示幅」から桁位置を計算して対応する歌詞の真上に配置
+  //     (コード行は等幅フォントで全角1字≈半角2字幅として近似)
+  const WRAP_COLS=28;
+  const sections=[];let cur={label:'',lines:[]};
+  let pendingChords=null;let bufCells=[];
+  function colWidth(s){let w=0;for(const ch of s){w+=(ch.charCodeAt(0)<=0x7e||/[｡-ﾟ]/.test(ch))?1:2;}return w;}
+  function flushLine(){
+    if(bufCells.length===0)return;
+    let chordLine='',lyricLine='';
+    for(const c of bufCells){
+      if(c.chord){
+        const pos=colWidth(lyricLine);
+        if(chordLine.length<pos)chordLine+=' '.repeat(pos-chordLine.length);
+        else if(chordLine)chordLine+='  ';
+        chordLine+=c.chord;
+      }
+      lyricLine+=c.text;
+    }
+    lyricLine=lyricLine.replace(/^[\s　]+|[\s　]+$/g,'');
+    if(chordLine||lyricLine){
+      // フレーズ末尾の短い断片(全角3字相当以下)は前の行に連結する(「の」だけの行を防ぐ)
+      const last=cur.lines[cur.lines.length-1];
+      if(lyricLine&&colWidth(lyricLine)<=6&&last&&last.lyric){
+        const pad=colWidth(last.lyric);
+        let base=last.chords||'';
+        if(base.length<pad)base+=' '.repeat(pad-base.length);
+        else if(base)base+='  ';
+        if(chordLine)last.chords=base+chordLine;
+        last.lyric+=lyricLine;
+      }else{
+        cur.lines.push({chords:chordLine,lyric:lyricLine});
+      }
+    }
+    bufCells=[];
+  }
+  function pushSection(label){flushLine();if(cur.lines.length>0||cur.label)sections.push(cur);cur={label:label||'',lines:[]};}
+  function emitInstrumental(chords){
+    flushLine();
+    const cs=(chords||[]).filter(Boolean);
+    if(cs.length)cur.lines.push({chords:cs.join('  '),lyric:''});
   }
   for(const tr of table.querySelectorAll('tr')){
     const chordImgs=tr.querySelectorAll('img[src*="daia/"]');
     if(chordImgs.length>0){
-      if(pendingChords!==null)emit('');
-      pendingChords=[...chordImgs].map(im=>normRinneChord(im.getAttribute('alt'))).filter(Boolean).join('  ');
+      if(pendingChords)emitInstrumental(pendingChords);
+      pendingChords=[...chordImgs].map(im=>normRinneChord(im.getAttribute('alt')));
       continue;
     }
-    // 歌詞行: 先にセクション画像を検出し、ルビ(rt/rp)と画像を除去してから各<td>のテキストを連結
+    // 歌詞行: セクション画像を検出し、空白のみのルビ(セクション画像の付属)→rt/rp→画像の順に除去
     const secImg=tr.querySelector('img[src*="section/"]');
     const label=secImg?mapSection(secImg.getAttribute('src')):null;
     const clone=tr.cloneNode(true);
+    clone.querySelectorAll('ruby').forEach(r=>{
+      const base=[...r.childNodes].filter(n=>n.nodeName!=='RT'&&n.nodeName!=='RP').map(n=>n.textContent||'').join('');
+      if(!base.replace(/[\s　]/g,''))r.remove();
+    });
     clone.querySelectorAll('rt,rp,img').forEach(el=>el.remove());
-    const lyric=[...clone.querySelectorAll('td')]
-      .map(td=>(td.textContent||'').replace(/ /g,' ').replace(/[\s　]+/g,' ').trim())
-      .join('').trim();
+    // レイアウト由来の改行/タブ/nbspのみ除去し、歌詞中のスペース(休符表現)は保持する
+    const tds=[...clone.querySelectorAll('td')];
+    const frags=tds.map(td=>(td.textContent||'').replace(/[\n\r\t\u00a0]+/g,''));
+    const chords=pendingChords||[];pendingChords=null;
     if(label)pushSection(label);
-    emit(lyric);
+    if(!frags.some(f=>f.replace(/[\s　]/g,''))){
+      emitInstrumental(chords);   // 歌詞のない行(イントロ・間奏等)は単独のコード行に
+      continue;
+    }
+    const n=Math.max(chords.length,tds.length);
+    for(let i=0;i<n;i++){
+      const text=frags[i]||'';
+      const isRest=text.length>0&&!text.replace(/[\s　]/g,'');
+      if(isRest&&bufCells.length>0)flushLine();
+      bufCells.push({chord:chords[i]||'',text:isRest?'':text});
+    }
+    if(colWidth(bufCells.map(c=>c.text).join(''))>=WRAP_COLS)flushLine();
   }
-  if(pendingChords!==null)emit('');
+  if(pendingChords)emitInstrumental(pendingChords);
+  flushLine();
   if(cur.lines.length>0||cur.label)sections.push(cur);
   const cleaned=sections.filter(s=>s.lines.some(l=>l.chords||l.lyric));
   if(cleaned.length===0||!cleaned.some(s=>s.lines.some(l=>l.chords)))return null;
