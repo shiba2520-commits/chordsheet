@@ -17,6 +17,10 @@ html,body{height:100%;background:var(--bg);background-image:radial-gradient(elli
 .hdr-btns{display:flex;gap:6px;align-items:center}
 .screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;overflow:hidden;animation:fadeIn .4s ease}
 .screen.active{display:flex}
+/* 検索画面: 登録済み曲リストが増えても見切れないよう、上詰め＋縦スクロールにする */
+#screen-search{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:7vh}
+#screen-search>*{flex-shrink:0}
+#library-section{width:100%;max-width:500px;padding-bottom:40px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .hero-jp{display:block;font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(24px,4vw,46px);letter-spacing:.04em}
 .hero-en{display:block;font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(36px,7vw,72px);color:var(--gold);letter-spacing:-.02em;line-height:1}
@@ -305,7 +309,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch{}}
 function lsGetJSON(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const CS_BUILD='2026-07-17.4 (ufretカポ対応)';
+const CS_BUILD='2026-07-17.5 (登録曲リストのスクロール修正)';
 console.log('ChordSheet build:',CS_BUILD);
 
 let apiKey=lsGet('cs_key');
